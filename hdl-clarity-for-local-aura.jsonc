@@ -1,0 +1,306 @@
+// ============================================================================
+//  HDL Clarity Pack for THIS machine (Aura Dracula Spirit (Soft) theme)
+// ----------------------------------------------------------------------------
+//  Optional companion to aura-colors-for-one-dark-pro.jsonc: the same
+//  VHDL / Verilog / SystemVerilog highlighting upgrade, scoped to the Aura
+//  theme you run locally. Merge the "editor.tokenColorCustomizations" block
+//  into this machine's settings.json (your settings already have that key
+//  with an italic-comments rule — add the "[Aura Dracula Spirit (Soft)]"
+//  object next to the existing "textMateRules").
+//
+//  The Aura theme already colors entity.name.type.* light blue,
+//  entity.name.function / support.function orange, constants green, and
+//  keywords purple — so this pack only adds the HDL-specific leaf scopes.
+//  Color roles are identical to the ODP overlay:
+//    #a277ff purple keywords (italic = modifiers) · #82e2ff types
+//    #ffca85 definition names & callables · #61ffca constants
+//    #f694ff operators/macros/formals · #a08cd9 VHDL punctuation
+//    #edecee identifiers (italic = declaration site)
+// ============================================================================
+{
+  "editor.tokenColorCustomizations": {
+    "[Aura Dracula Spirit (Soft)]": {
+      "textMateRules": [
+        {
+          "name": "HDL — modifier keywords italic purple",
+          "scope": [
+            "keyword.other.systemverilog",
+            "storage.modifier.systemverilog",
+            "storage.modifier.verilog",
+            "storage.type.rand.systemverilog",
+            "storage.type.rand.verilog",
+            "support.type.systemverilog",
+            "support.type.verilog",
+            "support.type.scope.systemverilog",
+            "support.type.scope.verilog",
+            "support.type.direction.systemverilog"
+          ],
+          "settings": { "foreground": "#a277ff", "fontStyle": "italic" }
+        },
+        {
+          "name": "HDL — plain keywords purple",
+          "scope": [
+            "keyword.other.verilog",
+            "keyword.other.block.systemverilog",
+            "keyword.other.block.verilog",
+            "storage.type.class.systemverilog",
+            "storage.type.function.systemverilog",
+            "storage.type.module.verilog",
+            "keyword.sva.systemverilog",
+            "keyword.sva.verilog",
+            "keyword.psl.systemverilog",
+            "keyword.psl.verilog",
+            "keyword.cover.systemverilog",
+            "keyword.cover.verilog"
+          ],
+          "settings": { "foreground": "#a277ff" }
+        },
+        {
+          "name": "HDL — types light blue",
+          "scope": [
+            "storage.type.systemverilog",
+            "storage.type.verilog",
+            "storage.type.userdefined.systemverilog",
+            "storage.type.userdefined.verilog",
+            "storage.type.user-defined.systemverilog",
+            "storage.type.user-defined.verilog",
+            "storage.type.vector.systemverilog",
+            "storage.type.atom.systemverilog",
+            "storage.type.built-in.systemverilog",
+            "storage.type.net.systemverilog",
+            "storage.type.notint.systemverilog",
+            "storage.type.interface.systemverilog",
+            "storage.type.interface.verilog",
+            "storage.module.systemverilog",
+            "storage.module.verilog",
+            "meta.typedef.systemverilog",
+            "meta.typedef.simple.systemverilog",
+            "meta.typedef.simple.verilog",
+            "entity.name.tag.module.reference.verilog",
+            "entity.name.tag.entity.reference.vhdl",
+            "entity.name.tag.component.reference.vhdl",
+            "entity.name.tag.architecture.reference.vhdl",
+            "entity.name.section.package.begin.vhdl",
+            "entity.name.section.package.end.vhdl",
+            "entity.name.section.package_body.begin.vhdl",
+            "entity.name.section.package_body.end.vhdl",
+            "support.type.ieee.std_logic_1164.vhdl",
+            "support.type.ieee.numeric_std.vhdl",
+            "support.type.ieee.math_complex.vhdl",
+            "support.type.std.standard.vhdl",
+            "support.type.std.textio.vhdl"
+          ],
+          "settings": { "foreground": "#82e2ff" }
+        },
+        {
+          "name": "HDL — UVM base classes + inherited classes italic blue",
+          "scope": [
+            "storage.type.uvm.systemverilog",
+            "storage.type.uvm.verilog",
+            "entity.other.inherited-class"
+          ],
+          "settings": { "foreground": "#82e2ff", "fontStyle": "italic" }
+        },
+        {
+          "name": "HDL — definition names, instances, labels orange",
+          "scope": [
+            "entity.name.type.module.systemverilog",
+            "entity.name.type.module.verilog",
+            "entity.name.type.class.systemverilog",
+            "entity.name.type.class.verilog",
+            "entity.name.declaration.systemverilog",
+            "entity.name.declaration.verilog",
+            "variable.other.module.systemverilog",
+            "entity.name.tag.module.identifier.verilog",
+            "support.function.generic.systemverilog",
+            "support.function.generic.verilog",
+            "entity.name.tag.vhdl",
+            "entity.name.tag.for.generate.begin.vhdl",
+            "entity.name.tag.for.generate.end.vhdl",
+            "entity.name.tag.if.generate.begin.vhdl",
+            "entity.name.tag.if.generate.end.vhdl",
+            "entity.name.tag.case.begin.vhdl",
+            "entity.name.tag.case.end.vhdl",
+            "entity.name.tag.while.loop.vhdl",
+            "entity.name.section.entity_instantiation.vhdl",
+            "entity.name.section.component_instantiation.vhdl",
+            "entity.name.section.process.begin.vhdl",
+            "entity.name.section.process.end.vhdl"
+          ],
+          "settings": { "foreground": "#ffca85" }
+        },
+        {
+          "name": "HDL — constants green",
+          "scope": [
+            "entity.name.constant.vhdl",
+            "support.constant.vhdl",
+            "support.constant.std_standard.vhdl",
+            "support.constant.std_textio.vhdl",
+            "support.constant.ieee_math_real.vhdl",
+            "support.constant.ieee_math_complex.vhdl",
+            "support.constant.ieee_fixed_pkg.vhdl",
+            "support.constant.ieee_float_pkg.vhdl",
+            "support.constant.std.standard.vhdl",
+            "support.constant.ieee.math_real.vhdl",
+            "support.constant.ieee.math_complex.vhdl",
+            "support.constant.systemverilog",
+            "support.constant.verilog"
+          ],
+          "settings": { "foreground": "#61ffca" }
+        },
+        {
+          "name": "HDL — preprocessor & macros pink",
+          "scope": [
+            "constant.other.define.systemverilog",
+            "constant.other.define.verilog",
+            "constant.other.preprocessor.systemverilog",
+            "constant.other.preprocessor.verilog",
+            "entity.name.type.define.systemverilog",
+            "entity.name.type.define.verilog",
+            "support.variable.systemverilog",
+            "support.variable.verilog",
+            "string.regexp.systemverilog",
+            "string.regexp.identifier.systemverilog",
+            "variable.other.constant.preprocessor.systemverilog",
+            "punctuation.definition.directive.systemverilog",
+            "keyword.other.compiler.directive.verilog",
+            "variable.other.constant.verilog"
+          ],
+          "settings": { "foreground": "#f694ff" }
+        },
+        {
+          "name": "HDL — port formals & record members pink",
+          "scope": [
+            "support.function.port.systemverilog",
+            "support.function.port.verilog",
+            "variable.parameter.vhdl",
+            "variable.other.member.vhdl"
+          ],
+          "settings": { "foreground": "#f694ff" }
+        },
+        {
+          "name": "HDL — modports & attributes italic pink",
+          "scope": [
+            "support.modport.systemverilog",
+            "support.modport.verilog",
+            "variable.annotation.vhdl",
+            "keyword.attributes.vhdl"
+          ],
+          "settings": { "foreground": "#f694ff", "fontStyle": "italic" }
+        },
+        {
+          "name": "HDL — SV/Verilog operators pink",
+          "scope": [
+            "keyword.operator.systemverilog",
+            "keyword.operator.verilog",
+            "keyword.operator.arithmetic.systemverilog",
+            "keyword.operator.arithmetic.verilog",
+            "keyword.operator.assignment.systemverilog",
+            "keyword.operator.bitwise.systemverilog",
+            "keyword.operator.bitwise.verilog",
+            "keyword.operator.bitwise.shift.systemverilog",
+            "keyword.operator.cast.systemverilog",
+            "keyword.operator.cast.verilog",
+            "keyword.operator.channel.systemverilog",
+            "keyword.operator.comparison.systemverilog",
+            "keyword.operator.comparison.verilog",
+            "keyword.operator.decrement.systemverilog",
+            "keyword.operator.increment.systemverilog",
+            "keyword.operator.logical.systemverilog",
+            "keyword.operator.logical.verilog",
+            "keyword.operator.other.systemverilog",
+            "keyword.operator.other.verilog",
+            "keyword.operator.param.systemverilog",
+            "keyword.operator.param.verilog",
+            "keyword.operator.scope.systemverilog",
+            "keyword.operator.scope.verilog"
+          ],
+          "settings": { "foreground": "#f694ff" }
+        },
+        {
+          "name": "VHDL — structural punctuation lavender",
+          "scope": [
+            "keyword.operator.vhdl",
+            "punctuation.vhdl",
+            "meta.item.stopping.character.vhdl",
+            "punctual.vhdl",
+            "punctuation.terminator.function_prototype.vhdl"
+          ],
+          "settings": { "foreground": "#a08cd9" }
+        },
+        {
+          "name": "HDL — end-label echoes italic lavender",
+          "scope": [
+            "entity.name.endlabel.type.vhdl",
+            "entity.label.systemverilog",
+            "entity.label.verilog"
+          ],
+          "settings": { "foreground": "#a08cd9", "fontStyle": "italic" }
+        },
+        {
+          "name": "VHDL — declared signals & library names italic white",
+          "scope": [
+            "entity.name.variable.vhdl",
+            "entity.name.section.vhdl",
+            "entity.name.tag.library.reference.vhdl"
+          ],
+          "settings": { "foreground": "#edecee", "fontStyle": "italic" }
+        },
+        {
+          "name": "HDL — plain identifiers near-white",
+          "scope": [
+            "variable.other.identifier.systemverilog",
+            "variable.other.identifier.verilog"
+          ],
+          "settings": { "foreground": "#edecee" }
+        },
+        {
+          "name": "HDL — escapes & format placeholders pink",
+          "scope": [
+            "constant.character.escape.systemverilog",
+            "constant.character.escape.verilog",
+            "constant.character.escape.vhdl",
+            "constant.other.placeholder.systemverilog",
+            "constant.other.placeholder.verilog",
+            "constant.character.format.placeholder.systemverilog"
+          ],
+          "settings": { "foreground": "#f694ff" }
+        },
+        {
+          "name": "HDL — comment TODO/FIXME markers",
+          "scope": [
+            "invalid.illegal.comment-highlight.vhdl",
+            "invalid.unimplemented.todo.systemverilog",
+            "invalid.broken.fixme.systemverilog"
+          ],
+          "settings": { "foreground": "#ffca85", "fontStyle": "bold italic" }
+        },
+        {
+          "name": "HDL — terminators & param parens near-white",
+          "scope": [
+            "punctuation.section.parameters.begin",
+            "punctuation.section.parameters.end",
+            "punctuation.definition.typedef.end.systemverilog",
+            "punctuation.definition.module.end.systemverilog",
+            "punctuation.definition.class.end.systemverilog",
+            "punctuation.definition.function.end.systemverilog",
+            "punctuation.module.instantiation.end.systemverilog",
+            "punctuation.definition.label.systemverilog",
+            "punctuation.section.list.verilog",
+            "punctuation.terminator.expression.verilog"
+          ],
+          "settings": { "foreground": "#edecee" }
+        },
+        {
+          "name": "HDL — range brackets pink",
+          "scope": [
+            "punctuation.slice.brackets.begin",
+            "punctuation.slice.brackets.end",
+            "punctuation.separator.range.verilog"
+          ],
+          "settings": { "foreground": "#f694ff" }
+        }
+      ]
+    }
+  }
+}

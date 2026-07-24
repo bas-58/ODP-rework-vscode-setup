@@ -1,5 +1,5 @@
 // ============================================================================
-//  Aura Dracula Spirit (Soft) skin for One Dark Pro
+//  Aura Dracula Spirit (Soft) skin for One Dark Pro — with HDL Clarity Pack
 // ----------------------------------------------------------------------------
 //  Paste these top-level keys into the OTHER station's user settings.json
 //  (Ctrl+Shift+P -> "Preferences: Open User Settings (JSON)").
@@ -8,6 +8,29 @@
 //  The "[*One Dark*]" scope matches any One Dark variant ("One Dark Pro",
 //  "One Dark Pro Darker", "Atom One Dark", ...), so it works no matter which
 //  flavor is selected — and it leaves every other theme untouched.
+//
+//  HDL CLARITY PACK (VHDL / Verilog / SystemVerilog):
+//  Rules were derived by tracing the actual TextMate grammars of BOTH
+//  installed HDL extensions (teros-technology.teroshdl 7.0.3 and
+//  mshr-h.veriloghdl 1.29.0). Both register grammars for the same languages;
+//  VS Code resolves this last-writer-wins (TerosHDL usually wins), so every
+//  rule below targets the UNION of both grammars' scopes — the colors hold
+//  no matter which grammar tokenizes the file.
+//
+//  Color roles (Aura palette + one new structural lavender):
+//    #a277ff  purple        keywords (italic = modifiers/directions/qualifiers)
+//    #82e2ff  light blue    types: builtins, user types, module/entity refs
+//    #ffca85  orange        names being defined + callables (functions, $tasks,
+//                           module/class/package names, instances, labels)
+//    #61ffca  green         literals & constants (numbers, strings, ALL_CAPS
+//                           params, enum members, VHDL constants)
+//    #f694ff  pink          operators, preprocessor/macros, port formals,
+//                           record members, attributes, escapes
+//    #a08cd9  lavender      VHDL structural punctuation (parens, ; , := =>) —
+//                           quiet so identifiers pop
+//    #edecee  near-white    plain signals/variables (italic = declaration site)
+//    #64548E  dim purple    comments (italic)
+//    #ff6767  red           genuinely invalid code (mismatched end labels...)
 // ============================================================================
 {
   // -------- Workbench / UI colors (full Aura palette + your local tweaks) ----
@@ -194,11 +217,13 @@
     }
   },
 
-  // -------- Syntax colors (Aura token rules + One-Dark-Pro neutralizers) ----
+  // -------- Syntax colors ----------------------------------------------------
   "editor.tokenColorCustomizations": {
     "[*One Dark*]": {
       "textMateRules": [
-        // ---- Aura Dracula Spirit (Soft) rules, verbatim ----
+        // ════════════════════════════════════════════════════════════════
+        //  PART 1 — Aura Dracula Spirit (Soft) base rules (general languages)
+        // ════════════════════════════════════════════════════════════════
         {
           "scope": [
             "support.type.property-name.css",
@@ -383,8 +408,11 @@
           "settings": { "fontStyle": "bold" }
         },
 
-        // ---- Neutralizers: One Dark Pro defines deeper scopes than Aura, ----
-        // ---- and deeper scopes win. These pin them back to Aura colors.  ----
+        // ════════════════════════════════════════════════════════════════
+        //  PART 2 — One Dark Pro neutralizers
+        //  ODP defines deeper scopes than Aura, and deeper scopes win.
+        //  These pin them back to Aura colors for non-HDL languages.
+        // ════════════════════════════════════════════════════════════════
         {
           "name": "ODP fix — numbers/constants back to green",
           "scope": [
@@ -398,6 +426,11 @@
         {
           "name": "ODP fix — all string flavors green",
           "scope": ["string.quoted", "string.template", "string.regexp"],
+          "settings": { "foreground": "#61ffca" }
+        },
+        {
+          "name": "ODP fix — string quotes match string body",
+          "scope": ["punctuation.definition.string"],
           "settings": { "foreground": "#61ffca" }
         },
         {
@@ -434,19 +467,368 @@
           "name": "ODP fix — classes stay light blue",
           "scope": ["entity.name.type.class"],
           "settings": { "foreground": "#82e2ff" }
+        },
+
+        // ════════════════════════════════════════════════════════════════
+        //  PART 3 — HDL CLARITY PACK  (VHDL / Verilog / SystemVerilog)
+        //  Scopes traced from teros-technology.teroshdl 7.0.3 and
+        //  mshr-h.veriloghdl 1.29.0 grammars. Deeper selectors beat the
+        //  generic Aura/neutralizer rules above, so HDL gets its own look.
+        //  Note: neither extension emits LSP semantic tokens (verified), so
+        //  TextMate scopes are the only color source for HDL.
+        // ════════════════════════════════════════════════════════════════
+
+        // ---- Keywords: modifiers/directions/qualifiers -> italic purple ----
+        // posedge/negedge/parameter/localparam/generate/virtual (keyword.other),
+        // input/output/inout + pkg:: qualifiers (support.type.*), packed/
+        // unsigned (storage.modifier.*), rand/randc (storage.type.rand)
+        {
+          "name": "HDL — modifier keywords italic purple",
+          "scope": [
+            "keyword.other.systemverilog",
+            "storage.modifier.systemverilog",
+            "storage.modifier.verilog",
+            "storage.type.rand.systemverilog",
+            "storage.type.rand.verilog",
+            "support.type.systemverilog",
+            "support.type.verilog",
+            "support.type.scope.systemverilog",
+            "support.type.scope.verilog",
+            "support.type.direction.systemverilog"
+          ],
+          "settings": { "foreground": "#a277ff", "fontStyle": "italic" }
+        },
+        // mshr-h's Verilog grammar lumps ALL keywords into keyword.other.verilog
+        // (and 'module' into storage.type.module.verilog; 'class'/'function'
+        // keywords into storage.type.class/.function in its SV grammar) —
+        // keep those plain purple, not italic.
+        {
+          "name": "HDL — plain keywords purple",
+          "scope": [
+            "keyword.other.verilog",
+            "keyword.other.block.systemverilog",
+            "keyword.other.block.verilog",
+            "storage.type.class.systemverilog",
+            "storage.type.function.systemverilog",
+            "storage.type.module.verilog",
+            "keyword.sva.systemverilog",
+            "keyword.sva.verilog",
+            "keyword.psl.systemverilog",
+            "keyword.psl.verilog",
+            "keyword.cover.systemverilog",
+            "keyword.cover.verilog"
+          ],
+          "settings": { "foreground": "#a277ff" }
+        },
+
+        // ---- Types -> light blue -------------------------------------------
+        // Builtin types (logic/bit/int/wire/reg...), user-defined types at use
+        // sites, module/interface types at instantiation, VHDL std/ieee types.
+        // (VHDL entity.name.type.* — entity/arch/type/package decl names and
+        //  ':' subtype indications — is already light blue via the Aura
+        //  "entity.name.type" rule in Part 1.)
+        // meta.typedef.* paints the otherwise-unscoped SOURCE type in
+        // "typedef custom_type new_type_name;" light blue in both grammars.
+        {
+          "name": "HDL — types light blue",
+          "scope": [
+            "storage.type.systemverilog",
+            "storage.type.verilog",
+            "storage.type.userdefined.systemverilog",
+            "storage.type.userdefined.verilog",
+            "storage.type.user-defined.systemverilog",
+            "storage.type.user-defined.verilog",
+            "storage.type.vector.systemverilog",
+            "storage.type.atom.systemverilog",
+            "storage.type.built-in.systemverilog",
+            "storage.type.net.systemverilog",
+            "storage.type.notint.systemverilog",
+            "storage.type.interface.systemverilog",
+            "storage.type.interface.verilog",
+            "storage.module.systemverilog",
+            "storage.module.verilog",
+            "meta.typedef.systemverilog",
+            "meta.typedef.simple.systemverilog",
+            "meta.typedef.simple.verilog",
+            "entity.name.tag.module.reference.verilog",
+            "entity.name.tag.entity.reference.vhdl",
+            "entity.name.tag.component.reference.vhdl",
+            "entity.name.tag.architecture.reference.vhdl",
+            "entity.name.section.package.begin.vhdl",
+            "entity.name.section.package.end.vhdl",
+            "entity.name.section.package_body.begin.vhdl",
+            "entity.name.section.package_body.end.vhdl",
+            "support.type.ieee.std_logic_1164.vhdl",
+            "support.type.ieee.numeric_std.vhdl",
+            "support.type.ieee.math_complex.vhdl",
+            "support.type.std.standard.vhdl",
+            "support.type.std.textio.vhdl"
+          ],
+          "settings": { "foreground": "#82e2ff" }
+        },
+        {
+          "name": "HDL — UVM base classes + inherited classes italic blue",
+          "scope": [
+            "storage.type.uvm.systemverilog",
+            "storage.type.uvm.verilog",
+            "entity.other.inherited-class"
+          ],
+          "settings": { "foreground": "#82e2ff", "fontStyle": "italic" }
+        },
+
+        // ---- Definition names & callables -> orange ------------------------
+        // Module/class/package/interface names, instance names, function/task
+        // call sites, block/process/generate labels. Declared function names
+        // and $system tasks and VHDL stdlib calls (rising_edge...) are already
+        // orange via "entity.name.function" / "support.function" in Part 1.
+        {
+          "name": "HDL — definition names, instances, labels orange",
+          "scope": [
+            "entity.name.type.module.systemverilog",
+            "entity.name.type.module.verilog",
+            "entity.name.type.class.systemverilog",
+            "entity.name.type.class.verilog",
+            "entity.name.declaration.systemverilog",
+            "entity.name.declaration.verilog",
+            "variable.other.module.systemverilog",
+            "entity.name.tag.module.identifier.verilog",
+            "support.function.generic.systemverilog",
+            "support.function.generic.verilog",
+            "entity.name.tag.vhdl",
+            "entity.name.tag.for.generate.begin.vhdl",
+            "entity.name.tag.for.generate.end.vhdl",
+            "entity.name.tag.if.generate.begin.vhdl",
+            "entity.name.tag.if.generate.end.vhdl",
+            "entity.name.tag.case.begin.vhdl",
+            "entity.name.tag.case.end.vhdl",
+            "entity.name.tag.while.loop.vhdl",
+            "entity.name.section.entity_instantiation.vhdl",
+            "entity.name.section.component_instantiation.vhdl",
+            "entity.name.section.process.begin.vhdl",
+            "entity.name.section.process.end.vhdl"
+          ],
+          "settings": { "foreground": "#ffca85" }
+        },
+
+        // ---- Constants -> green --------------------------------------------
+        // Numbers, ALL_CAPS params/enum members (constant.other.net) and
+        // strings are already green via Part 1/2. These pin the rest:
+        // VHDL constant decl names, 'when' choices, true/false/ns/failure...
+        {
+          "name": "HDL — constants green",
+          "scope": [
+            "entity.name.constant.vhdl",
+            "support.constant.vhdl",
+            "support.constant.std_standard.vhdl",
+            "support.constant.std_textio.vhdl",
+            "support.constant.ieee_math_real.vhdl",
+            "support.constant.ieee_math_complex.vhdl",
+            "support.constant.ieee_fixed_pkg.vhdl",
+            "support.constant.ieee_float_pkg.vhdl",
+            "support.constant.std.standard.vhdl",
+            "support.constant.ieee.math_real.vhdl",
+            "support.constant.ieee.math_complex.vhdl",
+            "support.constant.systemverilog",
+            "support.constant.verilog"
+          ],
+          "settings": { "foreground": "#61ffca" }
+        },
+
+        // ---- Preprocessor & macros -> pink ---------------------------------
+        // `define/`include/`ifdef directives, macro names and `USAGE — in both
+        // grammars' (very different) scope spellings.
+        {
+          "name": "HDL — preprocessor & macros pink",
+          "scope": [
+            "constant.other.define.systemverilog",
+            "constant.other.define.verilog",
+            "constant.other.preprocessor.systemverilog",
+            "constant.other.preprocessor.verilog",
+            "entity.name.type.define.systemverilog",
+            "entity.name.type.define.verilog",
+            "support.variable.systemverilog",
+            "support.variable.verilog",
+            "string.regexp.systemverilog",
+            "string.regexp.identifier.systemverilog",
+            "variable.other.constant.preprocessor.systemverilog",
+            "punctuation.definition.directive.systemverilog",
+            "keyword.other.compiler.directive.verilog",
+            "variable.other.constant.verilog"
+          ],
+          "settings": { "foreground": "#f694ff" }
+        },
+
+        // ---- Named-association formals & members -> pink -------------------
+        // .clk(...) port names in SV instantiations, formal names in VHDL
+        // port/generic maps, record members.
+        {
+          "name": "HDL — port formals & record members pink",
+          "scope": [
+            "support.function.port.systemverilog",
+            "support.function.port.verilog",
+            "variable.parameter.vhdl",
+            "variable.other.member.vhdl"
+          ],
+          "settings": { "foreground": "#f694ff" }
+        },
+        {
+          "name": "HDL — modports & attributes italic pink",
+          "scope": [
+            "support.modport.systemverilog",
+            "support.modport.verilog",
+            "variable.annotation.vhdl",
+            "keyword.attributes.vhdl"
+          ],
+          "settings": { "foreground": "#f694ff", "fontStyle": "italic" }
+        },
+
+        // ---- Operators (SV/V) -> pink --------------------------------------
+        {
+          "name": "HDL — SV/Verilog operators pink",
+          "scope": [
+            "keyword.operator.systemverilog",
+            "keyword.operator.verilog",
+            "keyword.operator.arithmetic.systemverilog",
+            "keyword.operator.arithmetic.verilog",
+            "keyword.operator.assignment.systemverilog",
+            "keyword.operator.bitwise.systemverilog",
+            "keyword.operator.bitwise.verilog",
+            "keyword.operator.bitwise.shift.systemverilog",
+            "keyword.operator.cast.systemverilog",
+            "keyword.operator.cast.verilog",
+            "keyword.operator.channel.systemverilog",
+            "keyword.operator.comparison.systemverilog",
+            "keyword.operator.comparison.verilog",
+            "keyword.operator.decrement.systemverilog",
+            "keyword.operator.increment.systemverilog",
+            "keyword.operator.logical.systemverilog",
+            "keyword.operator.logical.verilog",
+            "keyword.operator.other.systemverilog",
+            "keyword.operator.other.verilog",
+            "keyword.operator.param.systemverilog",
+            "keyword.operator.param.verilog",
+            "keyword.operator.scope.systemverilog",
+            "keyword.operator.scope.verilog"
+          ],
+          "settings": { "foreground": "#f694ff" }
+        },
+
+        // ---- VHDL structural punctuation -> quiet lavender -----------------
+        // TerosHDL scopes EVERY paren/comma/semicolon/:=/=> as
+        // keyword.operator.vhdl; mshr-h uses punctuation.vhdl. Muted so
+        // identifiers and literals carry the color weight.
+        {
+          "name": "VHDL — structural punctuation lavender",
+          "scope": [
+            "keyword.operator.vhdl",
+            "punctuation.vhdl",
+            "meta.item.stopping.character.vhdl",
+            "punctual.vhdl",
+            "punctuation.terminator.function_prototype.vhdl"
+          ],
+          "settings": { "foreground": "#a08cd9" }
+        },
+        // 'end fifo;' echoes and 'end : label' echoes — de-emphasized
+        {
+          "name": "HDL — end-label echoes italic lavender",
+          "scope": [
+            "entity.name.endlabel.type.vhdl",
+            "entity.label.systemverilog",
+            "entity.label.verilog"
+          ],
+          "settings": { "foreground": "#a08cd9", "fontStyle": "italic" }
+        },
+
+        // ---- Declaration-site names (VHDL) -> italic near-white ------------
+        // Declared signal/variable names, library names (ieee, work).
+        {
+          "name": "VHDL — declared signals & library names italic white",
+          "scope": [
+            "entity.name.variable.vhdl",
+            "entity.name.section.vhdl",
+            "entity.name.tag.library.reference.vhdl"
+          ],
+          "settings": { "foreground": "#edecee", "fontStyle": "italic" }
+        },
+
+        // ---- Plain identifiers -> near-white -------------------------------
+        {
+          "name": "HDL — plain identifiers near-white",
+          "scope": [
+            "variable.other.identifier.systemverilog",
+            "variable.other.identifier.verilog"
+          ],
+          "settings": { "foreground": "#edecee" }
+        },
+
+        // ---- String escapes & format placeholders (HDL only) -> pink -------
+        {
+          "name": "HDL — escapes & format placeholders pink",
+          "scope": [
+            "constant.character.escape.systemverilog",
+            "constant.character.escape.verilog",
+            "constant.character.escape.vhdl",
+            "constant.other.placeholder.systemverilog",
+            "constant.other.placeholder.verilog",
+            "constant.character.format.placeholder.systemverilog"
+          ],
+          "settings": { "foreground": "#f694ff" }
+        },
+
+        // ---- TODO/FIXME markers inside HDL comments -> bold orange ---------
+        // (grammar-level highlight; not an actual error, so not red)
+        {
+          "name": "HDL — comment TODO/FIXME markers",
+          "scope": [
+            "invalid.illegal.comment-highlight.vhdl",
+            "invalid.unimplemented.todo.systemverilog",
+            "invalid.broken.fixme.systemverilog"
+          ],
+          "settings": { "foreground": "#ffca85", "fontStyle": "bold italic" }
+        },
+
+        // ---- Punctuation polish --------------------------------------------
+        // Statement terminators / param-list parens back to near-white
+        {
+          "name": "HDL — terminators & param parens near-white",
+          "scope": [
+            "punctuation.section.parameters.begin",
+            "punctuation.section.parameters.end",
+            "punctuation.definition.typedef.end.systemverilog",
+            "punctuation.definition.module.end.systemverilog",
+            "punctuation.definition.class.end.systemverilog",
+            "punctuation.definition.function.end.systemverilog",
+            "punctuation.module.instantiation.end.systemverilog",
+            "punctuation.definition.label.systemverilog",
+            "punctuation.section.list.verilog",
+            "punctuation.terminator.expression.verilog"
+          ],
+          "settings": { "foreground": "#edecee" }
+        },
+        // Bit-range brackets [7:0] pink to match their ':' operator
+        {
+          "name": "HDL — range brackets pink",
+          "scope": [
+            "punctuation.slice.brackets.begin",
+            "punctuation.slice.brackets.end",
+            "punctuation.separator.range.verilog"
+          ],
+          "settings": { "foreground": "#f694ff" }
         }
       ]
     }
   },
 
   // -------- Semantic highlighting -------------------------------------------
-  // Aura doesn't use semantic tokens and One Dark Pro does, so it stays OFF
-  // globally to keep the visual match exact. It is switched ON for HDL files
-  // only: if the HDL extension on this station runs a language server that
-  // emits semantic tokens (TerosHDL, Verible LS, vhdl_ls / rust_hdl, Sigasi),
-  // the rules below repaint them in Aura colors. Extensions that are pure
-  // TextMate grammars (e.g. eirikpre's SystemVerilog) emit no semantic
-  // tokens — those are covered by the textMateRules above instead.
+  // Verified 2026-07: NO extension on either station emits LSP semantic tokens
+  // for HDL today — TerosHDL's bundled vhdl_ls 0.84.0 does not advertise
+  // semanticTokensProvider, TerosHDL's SV support is ctags-based (no LS), and
+  // mshr-h ships no language server (all its languageServer.*.enabled flags
+  // default to false). ALL HDL coloring therefore comes from the textMateRules
+  // above. This section stays OFF globally (keeps the Aura look exact) but ON
+  // for HDL files, so that if you ever enable an external LS that does emit
+  // semantic tokens (verible-verilog-ls, veridian, svls...), its tokens get
+  // repainted in the same palette instead of ODP defaults.
   "editor.semanticHighlighting.enabled": false,
   "[systemverilog]": { "editor.semanticHighlighting.enabled": true },
   "[verilog]": { "editor.semanticHighlighting.enabled": true },
@@ -455,22 +837,24 @@
   "editor.semanticTokenColorCustomizations": {
     "[*One Dark*]": {
       "rules": {
-        // Purple — keywords, modifiers, operators
+        // Purple — keywords & modifiers
         "keyword": "#a277ff",
-        "modifier": "#a277ff",
-        "operator": "#a277ff",
+        "modifier": { "foreground": "#a277ff", "fontStyle": "italic" },
+
+        // Pink — operators, macros, members, events (matches TextMate pack)
+        "operator": "#f694ff",
+        "macro": "#f694ff",
+        "property": "#f694ff",
+        "event": "#f694ff",
 
         // Green — literals & constant-like things
-        // (SV `defines arrive as "macro"; parameters/localparams and VHDL
-        //  constants/generics usually arrive as readonly variables)
         "string": "#61ffca",
         "number": "#61ffca",
         "regexp": "#61ffca",
         "enumMember": "#61ffca",
-        "macro": "#61ffca",
         "variable.readonly": "#61ffca",
 
-        // Orange — callables (functions, tasks, subprograms)
+        // Orange — callables
         "function": "#ffca85",
         "method": "#ffca85",
         "decorator": "#ffca85",
@@ -484,10 +868,6 @@
         "type": "#82e2ff",
         "typeParameter": "#82e2ff",
         "namespace": "#82e2ff",
-
-        // Pink — members & events
-        "property": "#f694ff",
-        "event": "#f694ff",
 
         // Near-white — plain signals, nets, variables, ports, block labels
         "variable": "#edecee",

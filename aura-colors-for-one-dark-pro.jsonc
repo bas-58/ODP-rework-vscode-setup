@@ -1,0 +1,502 @@
+// ============================================================================
+//  Aura Dracula Spirit (Soft) skin for One Dark Pro
+// ----------------------------------------------------------------------------
+//  Paste these top-level keys into the OTHER station's user settings.json
+//  (Ctrl+Shift+P -> "Preferences: Open User Settings (JSON)").
+//  If a key already exists there, merge the contents instead of duplicating it.
+//
+//  The "[*One Dark*]" scope matches any One Dark variant ("One Dark Pro",
+//  "One Dark Pro Darker", "Atom One Dark", ...), so it works no matter which
+//  flavor is selected — and it leaves every other theme untouched.
+// ============================================================================
+{
+  // -------- Workbench / UI colors (full Aura palette + your local tweaks) ----
+  "workbench.colorCustomizations": {
+    "[*One Dark*]": {
+      // Editor
+      "editor.background": "#191521",
+      "editor.foreground": "#edecee",
+      "editorLineNumber.foreground": "#a394f033",
+      "editorCursor.foreground": "#a277ff",
+      "editorCursor.background": "#000000",
+      "editor.selectionBackground": "#3d375e7f",
+      "editor.selectionHighlightBackground": "#3d375e7f",
+      "editor.inactiveSelectionBackground": "#3d375e7f",
+      "editor.wordHighlightBackground": "#3d375e7f",
+      "editor.wordHighlightStrongBackground": "#3d375e7f",
+      "editor.findMatchBackground": "#3d375e7f",
+      "editor.findMatchHighlightBackground": "#3d375e7f",
+      "editor.findRangeHighlightBackground": "#3d375e7f",
+      "editor.lineHighlightBackground": "#a394f011",
+      "editor.lineHighlightBorder": "#a394f000",
+      "editor.stackFrameHighlightBackground": "#353424",
+      "editorIndentGuide.background": "#2d2d2d",
+      "editorIndentGuide.activeBackground": "#6d6d6d",
+      "editorWhitespace.foreground": "#2d2d2d",
+      "editorBracketMatch.border": "#a277ff",
+      "editorLink.activeForeground": "#a277ff",
+      "editorInlayHint.background": "#2e2b38",
+      "editorInlayHint.foreground": "#cdccce",
+      "editorError.foreground": "#ff6767",
+      "editorError.border": "#ffffff00",
+      "editorWarning.foreground": "#ffca85",
+      "editorWarning.border": "#ffffff00",
+      "editorGutter.modifiedBackground": "#ffca85",
+      "editorGutter.addedBackground": "#61ffca",
+      "editorGutter.deletedBackground": "#ff6767",
+
+      // Widgets (find, suggest, hover)
+      "editorWidget.background": "#100b15",
+      "editorWidget.border": "#2d2d2d",
+      "editorSuggestWidget.background": "#140e1a",
+      "editorSuggestWidget.border": "#f694ff81",
+      "editorSuggestWidget.foreground": "#cdccce",
+      "editorSuggestWidget.highlightForeground": "#61ffca",
+      "editorSuggestWidget.selectedBackground": "#3A334B",
+      "editorHoverWidget.background": "#140e1a",
+      "editorHoverWidget.border": "#f694ff81",
+
+      // Tabs / editor groups
+      "editorGroup.border": "#000000",
+      "editorGroup.dropBackground": "#3d375e7f",
+      "editorGroupHeader.tabsBackground": "#14111b",
+      "editorGroupHeader.tabsBorder": "#000000",
+      "tab.activeBackground": "#191521",
+      "tab.activeForeground": "#a277ff",
+      "tab.border": "#111111",
+      "tab.inactiveBackground": "#191521",
+      "tab.inactiveForeground": "#6d6d6d",
+      "tab.activeBorderTop": "#a277ff",
+
+      // Side bar / activity bar / panel / status bar / title bar
+      "sideBar.background": "#191521",
+      "sideBar.foreground": "#cdccce",
+      "sideBar.border": "#000000",
+      "sideBarTitle.foreground": "#adacae",
+      "sideBarSectionHeader.background": "#191521",
+      "sideBarSectionHeader.foreground": "#adacae",
+      "activityBar.background": "#191521",
+      "activityBar.foreground": "#a277ff",
+      "activityBar.inactiveForeground": "#776882",
+      "activityBar.border": "#000000",
+      "activityBar.activeBorder": "#a277ff",
+      "activityBarBadge.background": "#f694ff",
+      "activityBarBadge.foreground": "#140E1A",
+      "panel.border": "#f694ff81",
+      "panelTitle.activeBorder": "#61ffca",
+      "panelTitle.activeForeground": "#cdccce",
+      "statusBar.background": "#14111b",
+      "statusBar.foreground": "#adacae",
+      "statusBar.border": "#000000",
+      "statusBar.noFolderBackground": "#100b15",
+      "statusBar.debuggingForeground": "#140E1A",
+      "statusBar.debuggingBackground": "#a19c77",
+      "statusBarItem.activeBackground": "#a277ff",
+      "titleBar.activeBackground": "#14111b",
+      "titleBar.inactiveBackground": "#2d2b38",
+      "titleBar.border": "#000000",
+
+      // Base / chrome
+      "foreground": "#ffffff",
+      "errorForeground": "#ff6767",
+      "focusBorder": "#a394f033",
+      "widget.shadow": "#0f0f0f",
+      "selection.background": "#3d375e7f",
+      "badge.background": "#a277ff",
+      "badge.foreground": "#140E1A",
+      "button.background": "#61ffca",
+      "button.foreground": "#140E1A",
+      "button.hoverBackground": "#49c29a",
+      "dropdown.background": "#140E1A",
+      "dropdown.border": "#3b334b",
+      "dropdown.foreground": "#cdccce",
+      "input.background": "#140E1A",
+      "input.border": "#3b334b",
+      "input.foreground": "#cdccce",
+      "input.placeholderForeground": "#af8aff7f",
+      "inputOption.activeBorder": "#a277ff",
+      "progressBar.background": "#61ffca",
+      "textLink.foreground": "#a277ff",
+      "textLink.activeForeground": "#8F5BFF",
+
+      // Lists & trees
+      "list.activeSelectionBackground": "#2e2b38",
+      "list.activeSelectionForeground": "#a277ff",
+      "list.inactiveSelectionBackground": "#2e2b38",
+      "list.inactiveSelectionForeground": "#a277ff",
+      "list.focusBackground": "#3b334b",
+      "list.focusForeground": "#a277ff",
+      "list.hoverBackground": "#3b334b",
+      "list.hoverForeground": "#edecee",
+      "list.highlightForeground": "#ffca85",
+      "list.errorForeground": "#ff6767",
+      "list.warningForeground": "#ffca85",
+      "tree.indentGuidesStroke": "#4d4d4d",
+
+      // Scrollbar + overview ruler (ruler fully hidden, like your setup)
+      "scrollbar.shadow": "#140E1A",
+      "scrollbarSlider.background": "#a394f033",
+      "scrollbarSlider.hoverBackground": "#a394f033",
+      "scrollbarSlider.activeBackground": "#3d375e7f",
+      "editorOverviewRuler.border": "#0000",
+      "editorOverviewRuler.findMatchForeground": "#0000",
+      "editorOverviewRuler.rangeHighlightForeground": "#0000",
+      "editorOverviewRuler.selectionHighlightForeground": "#0000",
+      "editorOverviewRuler.wordHighlightForeground": "#0000",
+      "editorOverviewRuler.wordHighlightStrongForeground": "#0000",
+      "editorOverviewRuler.bracketMatchForeground": "#0000",
+      "editorOverviewRuler.modifiedForeground": "#0000",
+      "editorOverviewRuler.addedForeground": "#0000",
+      "editorOverviewRuler.deletedForeground": "#0000",
+      "editorOverviewRuler.errorForeground": "#0000",
+      "editorOverviewRuler.warningForeground": "#0000",
+      "editorOverviewRuler.infoForeground": "#0000",
+
+      // Terminal
+      "terminal.background": "#191521",
+      "terminal.foreground": "#cdccce",
+      "terminal.selectionBackground": "#3d375e7f",
+      "terminalCursor.background": "#2d2d2d",
+      "terminalCursor.foreground": "#adacae",
+      "terminal.ansiBlack": "#140E1A",
+      "terminal.ansiRed": "#ff6767",
+      "terminal.ansiGreen": "#8EFFD9",
+      "terminal.ansiYellow": "#ffca85",
+      "terminal.ansiBlue": "#F477FF",
+      "terminal.ansiMagenta": "#61ffca",
+      "terminal.ansiCyan": "#a277ff",
+      "terminal.ansiWhite": "#cdccce",
+      "terminal.ansiBrightBlack": "#2d2d2d",
+      "terminal.ansiBrightRed": "#ffca85",
+      "terminal.ansiBrightGreen": "#a277ff",
+      "terminal.ansiBrightYellow": "#ffca85",
+      "terminal.ansiBrightBlue": "#a277ff",
+      "terminal.ansiBrightMagenta": "#61ffca",
+      "terminal.ansiBrightCyan": "#61ffca",
+      "terminal.ansiBrightWhite": "#edecee",
+
+      // Git / diff / peek
+      "gitDecoration.modifiedResourceForeground": "#ffca85",
+      "gitDecoration.stageModifiedResourceForeground": "#ffca85",
+      "gitDecoration.deletedResourceForeground": "#ff6767",
+      "gitDecoration.untrackedResourceForeground": "#a277ff",
+      "gitDecoration.ignoredResourceForeground": "#4d4d4d",
+      "gitDecoration.conflictingResourceForeground": "#a277ff",
+      "diffEditor.insertedTextBackground": "#00d89023",
+      "diffEditor.removedTextBackground": "#ff474720",
+      "peekView.border": "#14111b",
+      "peekViewEditor.background": "#140e1a",
+      "peekViewEditorGutter.background": "#140e1a",
+      "peekViewResult.background": "#14111b",
+      "peekViewTitle.background": "#14111b",
+      "peekViewTitleDescription.foreground": "#FFF4E5",
+      "peekViewTitleLabel.foreground": "#a277ff"
+    }
+  },
+
+  // -------- Syntax colors (Aura token rules + One-Dark-Pro neutralizers) ----
+  "editor.tokenColorCustomizations": {
+    "[*One Dark*]": {
+      "textMateRules": [
+        // ---- Aura Dracula Spirit (Soft) rules, verbatim ----
+        {
+          "scope": [
+            "support.type.property-name.css",
+            "meta.property-name.scss",
+            "source.css.scss"
+          ],
+          "settings": { "foreground": "#a277ff", "fontStyle": "italic" }
+        },
+        {
+          "scope": [
+            "keyword.operator.comparison",
+            "keyword.control.loop.js",
+            "keyword.control.loop.ts",
+            "keyword.control.import.js",
+            "keyword.control.import.ts",
+            "keyword.control.import.tsx",
+            "keyword.control.from.js",
+            "keyword.control.from.ts",
+            "keyword.control.from.tsx",
+            "keyword.control.export",
+            "keyword.operator.instanceof.js",
+            "keyword.operator.expression.instanceof.ts",
+            "keyword.operator.expression.instanceof.tsx"
+          ],
+          "settings": { "foreground": "#f694ff" }
+        },
+        {
+          "scope": ["storage.modifier.async"],
+          "settings": { "foreground": "#f694ff", "fontStyle": "italic" }
+        },
+        {
+          "name": "Purple — keywords, storage, support, tags",
+          "scope": [
+            "keyword",
+            "storage",
+            "support",
+            "entity.name.tag",
+            "variable.language",
+            "keyword.control.flow",
+            "storage.modifier",
+            "keyword.operator",
+            "entity.other.attribute-name.class.css",
+            "entity.other.keyframe-offset",
+            "markup.heading",
+            "markup.underline.link",
+            "variable.other.env",
+            "punctuation.definition.list.begin.markdown",
+            "punctuation.definition.bold.markdown",
+            "punctuation.definition.italic.markdown",
+            "punctuation.definition.markdown",
+            "punctuation.definition.quote.begin.markdown",
+            "punctuation.definition.raw.markdown",
+            "constant.length.units.css",
+            "constant.percentage.units.css"
+          ],
+          "settings": { "foreground": "#a277ff" }
+        },
+        {
+          "name": "Green — strings & constants",
+          "scope": [
+            "string",
+            "markup.inserted",
+            "markup.raw",
+            "constant",
+            "source.env",
+            "support.type.builtin.graphql",
+            "variable.other.quoted.double",
+            "markup.inline.raw.string.markdown",
+            "entity.other.attribute-name.id.css",
+            "meta.jsx.children",
+            "JSXNested"
+          ],
+          "settings": { "foreground": "#61ffca" }
+        },
+        {
+          "name": "Orange — functions & components",
+          "scope": [
+            "markup.changed",
+            "entity",
+            "entity.name.function",
+            "support.function",
+            "entity.name.function.elixir",
+            "entity.name.function-call.elixir",
+            "support.class.component",
+            "support.class.component.open",
+            "support.class.component.close",
+            "meta.function-call.generic.python",
+            "entity.name.section.markdown",
+            "storage.type.annotation.dart"
+          ],
+          "settings": { "foreground": "#ffca85" }
+        },
+        {
+          "name": "Red — invalid / deleted",
+          "scope": ["invalid", "markup.deleted"],
+          "settings": { "foreground": "#ff6767" }
+        },
+        {
+          "name": "Pink — properties, attributes, separators",
+          "scope": [
+            "string.unquoted",
+            "punctuation.separator",
+            "entity.other.attribute-name",
+            "meta.object-literal.key",
+            "variable.object.property",
+            "variable.other.property",
+            "variable.other.object.property",
+            "variable.other.constant.property",
+            "meta.type.annotation",
+            "support.type.vendored",
+            "constant.language.symbol.elixir",
+            "variable.graphql",
+            "meta.attribute.python",
+            "source.dart"
+          ],
+          "settings": { "foreground": "#f694ff" }
+        },
+        {
+          "name": "Foreground — variables, params, punctuation",
+          "scope": [
+            "variable",
+            "markup.list",
+            "support.constant.property-value.css",
+            "variable.parameter.keyframe-list.css",
+            "source.css",
+            "support.constant.font-name",
+            "support.constant.vendored.property-value",
+            "variable.parameter",
+            "meta.class",
+            "meta.method.declaration",
+            "parameter.variable.function.elixir",
+            "punctuation.definition.tag",
+            "punctuation.section.embedded",
+            "meta.embedded.expression",
+            "punctuation.terminator.dart",
+            "punctuation.dot.dart"
+          ],
+          "settings": { "foreground": "#edecee" }
+        },
+        {
+          "name": "Comments (italic to match your setup)",
+          "scope": ["comment"],
+          "settings": { "foreground": "#64548E", "fontStyle": "italic" }
+        },
+        {
+          "scope": ["string.quoted.docstring.multi.python"],
+          "settings": { "foreground": "#64548E" }
+        },
+        {
+          "name": "Light blue — types & classes",
+          "scope": [
+            "entity.name.type",
+            "entity.name.class",
+            "support.class.builtin",
+            "punctuation.definition.template-expression.begin",
+            "punctuation.definition.template-expression.end",
+            "punctuation.quasi.element.begin",
+            "punctuation.quasi.element.end",
+            "entity.other.inherited-class",
+            "variable.other.constant.elixir",
+            "support.class.dart"
+          ],
+          "settings": { "foreground": "#82e2ff" }
+        },
+        {
+          "name": "Italics",
+          "scope": [
+            "meta.return.type",
+            "entity.name.type.interface",
+            "meta.type.annotation",
+            "meta.function.parameters",
+            "markup.italic.markdown"
+          ],
+          "settings": { "fontStyle": "italic" }
+        },
+        {
+          "scope": "markup.underline",
+          "settings": { "fontStyle": "underline" }
+        },
+        {
+          "scope": ["markup.bold.markdown", "storage.type.annotation.dart"],
+          "settings": { "fontStyle": "bold" }
+        },
+
+        // ---- Neutralizers: One Dark Pro defines deeper scopes than Aura, ----
+        // ---- and deeper scopes win. These pin them back to Aura colors.  ----
+        {
+          "name": "ODP fix — numbers/constants back to green",
+          "scope": [
+            "constant.numeric",
+            "constant.language",
+            "constant.character",
+            "constant.other"
+          ],
+          "settings": { "foreground": "#61ffca" }
+        },
+        {
+          "name": "ODP fix — all string flavors green",
+          "scope": ["string.quoted", "string.template", "string.regexp"],
+          "settings": { "foreground": "#61ffca" }
+        },
+        {
+          "name": "ODP fix — keywords/storage back to purple",
+          "scope": [
+            "keyword.control",
+            "storage.type",
+            "support.type",
+            "support.constant",
+            "support.variable",
+            "support.class",
+            "keyword.operator.assignment",
+            "keyword.operator.arithmetic",
+            "keyword.operator.logical",
+            "keyword.operator.ternary"
+          ],
+          "settings": { "foreground": "#a277ff" }
+        },
+        {
+          "name": "ODP fix — comment slashes match comment body",
+          "scope": ["punctuation.definition.comment"],
+          "settings": { "foreground": "#64548E", "fontStyle": "italic" }
+        },
+        {
+          "name": "ODP fix — plain variables stay near-white",
+          "scope": [
+            "variable.other.readwrite",
+            "variable.other.object",
+            "variable.parameter.function"
+          ],
+          "settings": { "foreground": "#edecee" }
+        },
+        {
+          "name": "ODP fix — classes stay light blue",
+          "scope": ["entity.name.type.class"],
+          "settings": { "foreground": "#82e2ff" }
+        }
+      ]
+    }
+  },
+
+  // -------- Semantic highlighting -------------------------------------------
+  // Aura doesn't use semantic tokens and One Dark Pro does, so it stays OFF
+  // globally to keep the visual match exact. It is switched ON for HDL files
+  // only: if the HDL extension on this station runs a language server that
+  // emits semantic tokens (TerosHDL, Verible LS, vhdl_ls / rust_hdl, Sigasi),
+  // the rules below repaint them in Aura colors. Extensions that are pure
+  // TextMate grammars (e.g. eirikpre's SystemVerilog) emit no semantic
+  // tokens — those are covered by the textMateRules above instead.
+  "editor.semanticHighlighting.enabled": false,
+  "[systemverilog]": { "editor.semanticHighlighting.enabled": true },
+  "[verilog]": { "editor.semanticHighlighting.enabled": true },
+  "[vhdl]": { "editor.semanticHighlighting.enabled": true },
+
+  "editor.semanticTokenColorCustomizations": {
+    "[*One Dark*]": {
+      "rules": {
+        // Purple — keywords, modifiers, operators
+        "keyword": "#a277ff",
+        "modifier": "#a277ff",
+        "operator": "#a277ff",
+
+        // Green — literals & constant-like things
+        // (SV `defines arrive as "macro"; parameters/localparams and VHDL
+        //  constants/generics usually arrive as readonly variables)
+        "string": "#61ffca",
+        "number": "#61ffca",
+        "regexp": "#61ffca",
+        "enumMember": "#61ffca",
+        "macro": "#61ffca",
+        "variable.readonly": "#61ffca",
+
+        // Orange — callables (functions, tasks, subprograms)
+        "function": "#ffca85",
+        "method": "#ffca85",
+        "decorator": "#ffca85",
+
+        // Light blue — types: modules, entities, packages, classes,
+        // interfaces, typedefs, records
+        "class": "#82e2ff",
+        "struct": "#82e2ff",
+        "enum": "#82e2ff",
+        "interface": "#82e2ff",
+        "type": "#82e2ff",
+        "typeParameter": "#82e2ff",
+        "namespace": "#82e2ff",
+
+        // Pink — members & events
+        "property": "#f694ff",
+        "event": "#f694ff",
+
+        // Near-white — plain signals, nets, variables, ports, block labels
+        "variable": "#edecee",
+        "parameter": "#edecee",
+        "label": "#edecee",
+
+        // Comments
+        "comment": { "foreground": "#64548E", "fontStyle": "italic" }
+      }
+    }
+  }
+}

@@ -105,6 +105,14 @@
           "settings": { "foreground": "#82e2ff", "fontStyle": "italic" }
         },
         {
+          "name": "HDL — parameter keyword in #() headers italic purple (mshr-h)",
+          "scope": [
+            "meta.parameters.systemverilog storage.type.net.systemverilog",
+            "meta.parameters.verilog storage.type.net.verilog"
+          ],
+          "settings": { "foreground": "#a277ff", "fontStyle": "italic" }
+        },
+        {
           "name": "HDL — definition names, instances, labels orange",
           "scope": [
             "entity.name.type.module.systemverilog",
@@ -316,6 +324,91 @@
             "punctuation.slice.brackets.end",
             "punctuation.separator.range.verilog"
           ],
+          "settings": { "foreground": "#f694ff" }
+        },
+        {
+          "name": "HDL — module/package declaration names bold orange",
+          "scope": [
+            "entity.name.type.module.systemverilog",
+            "entity.name.type.module.verilog",
+            "meta.definition.systemverilog entity.name.type.class.systemverilog"
+          ],
+          "settings": { "foreground": "#ffca85", "fontStyle": "bold" }
+        },
+        {
+          "name": "HDL — instantiated module refs light blue (mshr-h)",
+          "scope": [
+            "meta.module.parameters.systemverilog entity.name.type.module.systemverilog",
+            "meta.module.no_parameters.systemverilog entity.name.type.module.systemverilog",
+            "meta.module.parameters.verilog entity.name.type.module.verilog",
+            "meta.module.no_parameters.verilog entity.name.type.module.verilog"
+          ],
+          "settings": { "foreground": "#82e2ff", "fontStyle": "" }
+        },
+        {
+          "name": "HDL — instance names plain orange (TerosHDL)",
+          "scope": [
+            "meta.module.inst.param.systemverilog entity.name.type.module.systemverilog",
+            "meta.module.inst.systemverilog entity.name.type.module.systemverilog",
+            "meta.module.inst.param.verilog entity.name.type.module.verilog",
+            "meta.module.inst.verilog entity.name.type.module.verilog"
+          ],
+          "settings": { "foreground": "#ffca85", "fontStyle": "" }
+        },
+        {
+          "name": "HDL — system tasks italic orange",
+          "scope": [
+            "support.function.systemverilog",
+            "support.function.verilog",
+            "support.function.system",
+            "support.function.non-standard"
+          ],
+          "settings": { "foreground": "#ffca85", "fontStyle": "italic" }
+        },
+        {
+          "name": "HDL — field accesses pink (TerosHDL)",
+          "scope": [
+            "support.function.field.systemverilog",
+            "support.function.field.verilog"
+          ],
+          "settings": { "foreground": "#f694ff" }
+        },
+        {
+          "name": "HDL — attributes de-emphasized lavender italic",
+          "scope": [
+            "meta.attribute.systemverilog keyword.control.systemverilog",
+            "meta.attribute.systemverilog keyword.operator.assignment.systemverilog",
+            "meta.attribute.verilog keyword.control.verilog",
+            "punctuation.attribute.rounds.begin",
+            "punctuation.attribute.rounds.end"
+          ],
+          "settings": { "foreground": "#b39ddb", "fontStyle": "italic" }
+        },
+        {
+          "name": "HDL — time & delay literals italic green",
+          "scope": [
+            "constant.numeric.time.systemverilog",
+            "constant.numeric.time.verilog",
+            "constant.numeric.delay.verilog"
+          ],
+          "settings": { "foreground": "#61ffca", "fontStyle": "italic" }
+        },
+        {
+          "name": "VHDL — entity port/generic names italic white (mshr-h)",
+          "scope": [
+            "meta.block.port_list.vhdl meta.list.element.vhdl",
+            "meta.block.generic_list.vhdl meta.list.element.vhdl"
+          ],
+          "settings": { "foreground": "#edecee", "fontStyle": "italic" }
+        },
+        {
+          "name": "VHDL — enum literals green (mshr-h)",
+          "scope": ["meta.block.type.vhdl"],
+          "settings": { "foreground": "#61ffca" }
+        },
+        {
+          "name": "VHDL — record field names pink (mshr-h)",
+          "scope": ["meta.block.record.vhdl"],
           "settings": { "foreground": "#f694ff" }
         }
       ]

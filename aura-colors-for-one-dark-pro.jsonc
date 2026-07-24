@@ -608,6 +608,16 @@
           "scope": ["storage.type.net.systemverilog"],
           "settings": { "foreground": "#82e2ff", "fontStyle": "italic" }
         },
+        // ...but inside a #(...) parameter header, that scope is the
+        // 'parameter'/'localparam' KEYWORD — italic purple like elsewhere.
+        {
+          "name": "HDL — parameter keyword in #() headers italic purple (mshr-h)",
+          "scope": [
+            "meta.parameters.systemverilog storage.type.net.systemverilog",
+            "meta.parameters.verilog storage.type.net.verilog"
+          ],
+          "settings": { "foreground": "#a277ff", "fontStyle": "italic" }
+        },
 
         // ---- Definition names & callables -> orange ------------------------
         // Module/class/package/interface names, instance names, function/task
@@ -867,6 +877,114 @@
             "punctuation.slice.brackets.end",
             "punctuation.separator.range.verilog"
           ],
+          "settings": { "foreground": "#f694ff" }
+        },
+
+        // ════════════════════════════════════════════════════════════════
+        //  PART 4 — STYLIZATION PASS (mshr-h first; region-scoped rules)
+        //  Descendant selectors hook mshr-h's meta.* regions so the same
+        //  scope can be styled by context (declaration vs reference).
+        //  Region extents verified with a vscode-textmate harness.
+        // ════════════════════════════════════════════════════════════════
+
+        // Module & package DECLARATION names anchor the file — bold.
+        {
+          "name": "HDL — module/package declaration names bold orange",
+          "scope": [
+            "entity.name.type.module.systemverilog",
+            "entity.name.type.module.verilog",
+            "meta.definition.systemverilog entity.name.type.class.systemverilog"
+          ],
+          "settings": { "foreground": "#ffca85", "fontStyle": "bold" }
+        },
+        // ...but the SAME scope at an INSTANTIATION is a type reference:
+        // mshr-h wraps those in meta.module.parameters/.no_parameters.
+        {
+          "name": "HDL — instantiated module refs light blue (mshr-h)",
+          "scope": [
+            "meta.module.parameters.systemverilog entity.name.type.module.systemverilog",
+            "meta.module.no_parameters.systemverilog entity.name.type.module.systemverilog",
+            "meta.module.parameters.verilog entity.name.type.module.verilog",
+            "meta.module.no_parameters.verilog entity.name.type.module.verilog"
+          ],
+          "settings": { "foreground": "#82e2ff", "fontStyle": "" }
+        },
+        // TerosHDL reuses the module-name scope for INSTANCE names — keep
+        // those plain orange, not bold.
+        {
+          "name": "HDL — instance names plain orange (TerosHDL)",
+          "scope": [
+            "meta.module.inst.param.systemverilog entity.name.type.module.systemverilog",
+            "meta.module.inst.systemverilog entity.name.type.module.systemverilog",
+            "meta.module.inst.param.verilog entity.name.type.module.verilog",
+            "meta.module.inst.verilog entity.name.type.module.verilog"
+          ],
+          "settings": { "foreground": "#ffca85", "fontStyle": "" }
+        },
+        // Builtin $tasks/$functions italic — separates them from user calls.
+        {
+          "name": "HDL — system tasks italic orange",
+          "scope": [
+            "support.function.systemverilog",
+            "support.function.verilog",
+            "support.function.system",
+            "support.function.non-standard"
+          ],
+          "settings": { "foreground": "#ffca85", "fontStyle": "italic" }
+        },
+        // Struct/interface field accesses read as members — pink.
+        {
+          "name": "HDL — field accesses pink (TerosHDL)",
+          "scope": [
+            "support.function.field.systemverilog",
+            "support.function.field.verilog"
+          ],
+          "settings": { "foreground": "#f694ff" }
+        },
+        // (* synthesis attributes *) are metadata, not logic — recede.
+        {
+          "name": "HDL — attributes de-emphasized lavender italic",
+          "scope": [
+            "meta.attribute.systemverilog keyword.control.systemverilog",
+            "meta.attribute.systemverilog keyword.operator.assignment.systemverilog",
+            "meta.attribute.verilog keyword.control.verilog",
+            "punctuation.attribute.rounds.begin",
+            "punctuation.attribute.rounds.end"
+          ],
+          "settings": { "foreground": "#b39ddb", "fontStyle": "italic" }
+        },
+        // Time & delay literals (2ns, #10) italic green — physical units.
+        {
+          "name": "HDL — time & delay literals italic green",
+          "scope": [
+            "constant.numeric.time.systemverilog",
+            "constant.numeric.time.verilog",
+            "constant.numeric.delay.verilog"
+          ],
+          "settings": { "foreground": "#61ffca", "fontStyle": "italic" }
+        },
+        // mshr-h VHDL: port/generic NAMES are the only unscoped tokens in
+        // their list regions — declaration-site italic, like TerosHDL's
+        // entity.name.variable.
+        {
+          "name": "VHDL — entity port/generic names italic white (mshr-h)",
+          "scope": [
+            "meta.block.port_list.vhdl meta.list.element.vhdl",
+            "meta.block.generic_list.vhdl meta.list.element.vhdl"
+          ],
+          "settings": { "foreground": "#edecee", "fontStyle": "italic" }
+        },
+        // mshr-h VHDL: enum literals are the only unscoped tokens inside a
+        // type declaration region — green, matching SV enum members. Record
+        // regions: field names unscoped — pink, matching Teros members.
+        {
+          "name": "VHDL — enum literals green (mshr-h)",
+          "scope": ["meta.block.type.vhdl"],
+          "settings": { "foreground": "#61ffca" }
+        },
+        {
+          "name": "VHDL — record field names pink (mshr-h)",
+          "scope": ["meta.block.record.vhdl"],
           "settings": { "foreground": "#f694ff" }
         }
       ]

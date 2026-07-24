@@ -186,6 +186,8 @@
           "scope": [
             "support.function.port.systemverilog",
             "support.function.port.verilog",
+            "support.function.port.implicit.systemverilog",
+            "support.function.port.implicit.verilog",
             "variable.parameter.vhdl",
             "variable.other.member.vhdl"
           ],

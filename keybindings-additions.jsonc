@@ -1,0 +1,29 @@
+// ============================================================================
+//  Keyboard-nav additions — append these entries to keybindings.json
+//  (Ctrl+Shift+P -> "Preferences: Open Keyboard Shortcuts (JSON)")
+// ----------------------------------------------------------------------------
+//  Every command here ships UNBOUND by default (verified against the installed
+//  extensions and VS Code defaults), except the final entry which REMOVES an
+//  extension default that collides with your alt+j joinLines.
+// ============================================================================
+[
+  // Full-screen the panel/terminal without touching the mouse chevron
+  { "key": "ctrl+k ctrl+m", "command": "workbench.action.toggleMaximizedPanel" },
+
+  // Reveal the current file in the Explorer tree (you run without breadcrumbs
+  // or tabs, so this is the "where am I?" key; Ctrl+K R is the OS-Explorer
+  // variant, this one stays inside VS Code)
+  { "key": "ctrl+alt+e", "command": "workbench.files.action.showActiveFileInExplorer" },
+
+  // New file / folder while the Explorer tree has focus (shadows new-untitled
+  // and new-window only inside the tree)
+  { "key": "ctrl+n", "command": "explorer.newFile", "when": "filesExplorerFocus && !inputFocus" },
+  { "key": "ctrl+shift+n", "command": "explorer.newFolder", "when": "filesExplorerFocus && !inputFocus" },
+
+  // HDL: paste an instantiation of any module in the workspace (mshr-h)
+  { "key": "ctrl+alt+i", "command": "verilog.instantiateModule", "when": "editorLangId == 'systemverilog' || editorLangId == 'verilog'" },
+
+  // Supermaven binds alt+j globally to "new chat tab", which shadows your
+  // joinLines everywhere outside the editor — remove its claim entirely
+  { "key": "alt+j", "command": "-supermaven.newConversationTab" }
+]

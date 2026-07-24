@@ -136,6 +136,13 @@
           "settings": { "foreground": "#ffca85" }
         },
         {
+          "name": "HDL — typedef'd name orange (mshr-h grammar)",
+          "scope": [
+            "meta.typedef.systemverilog variable.other.identifier.systemverilog"
+          ],
+          "settings": { "foreground": "#ffca85" }
+        },
+        {
           "name": "HDL — constants green",
           "scope": [
             "entity.name.constant.vhdl",

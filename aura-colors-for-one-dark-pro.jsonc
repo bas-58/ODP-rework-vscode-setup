@@ -645,6 +645,17 @@
           ],
           "settings": { "foreground": "#ffca85" }
         },
+        // mshr-h gives the NEW name in "typedef old_t new_t;" the same scope
+        // as every plain identifier — this descendant rule (identifier inside
+        // the typedef region) beats the white identifier rule so the defined
+        // name reads orange under BOTH grammars.
+        {
+          "name": "HDL — typedef'd name orange (mshr-h grammar)",
+          "scope": [
+            "meta.typedef.systemverilog variable.other.identifier.systemverilog"
+          ],
+          "settings": { "foreground": "#ffca85" }
+        },
 
         // ---- Constants -> green --------------------------------------------
         // Numbers, ALL_CAPS params/enum members (constant.other.net) and

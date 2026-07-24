@@ -26,7 +26,7 @@
 //                           params, enum members, VHDL constants)
 //    #f694ff  pink          operators, preprocessor/macros, port formals,
 //                           record members, attributes, escapes
-//    #a08cd9  lavender      VHDL structural punctuation (parens, ; , := =>) —
+//    #b39ddb  lavender      VHDL structural punctuation (parens, ; , := =>) —
 //                           quiet so identifiers pop
 //    #edecee  near-white    plain signals/variables (italic = declaration site)
 //    #64548E  dim purple    comments (italic)
@@ -468,6 +468,33 @@
           "scope": ["entity.name.type.class"],
           "settings": { "foreground": "#82e2ff" }
         },
+        {
+          "name": "ODP fix — invalid code red (ODP paints invalid.illegal white)",
+          "scope": [
+            "invalid.illegal",
+            "invalid.broken",
+            "invalid.unimplemented",
+            "invalid.deprecated"
+          ],
+          "settings": { "foreground": "#ff6767" }
+        },
+        {
+          "name": "ODP fix — JSON/TOML keys back to purple (ODP's deeper rules win otherwise)",
+          "scope": [
+            "support.type.property-name.json",
+            "support.type.property-name.toml",
+            "support.type.property-name.table.toml",
+            "support.type.property-name.array.toml"
+          ],
+          "settings": { "foreground": "#a277ff" }
+        },
+        {
+          "name": "ODP fix — docstring quotes match dim docstring body",
+          "scope": [
+            "string.quoted.docstring.multi.python punctuation.definition.string"
+          ],
+          "settings": { "foreground": "#64548E" }
+        },
 
         // ════════════════════════════════════════════════════════════════
         //  PART 3 — HDL CLARITY PACK  (VHDL / Verilog / SystemVerilog)
@@ -537,11 +564,9 @@
             "storage.type.userdefined.systemverilog",
             "storage.type.userdefined.verilog",
             "storage.type.user-defined.systemverilog",
-            "storage.type.user-defined.verilog",
             "storage.type.vector.systemverilog",
             "storage.type.atom.systemverilog",
             "storage.type.built-in.systemverilog",
-            "storage.type.net.systemverilog",
             "storage.type.notint.systemverilog",
             "storage.type.interface.systemverilog",
             "storage.type.interface.verilog",
@@ -575,6 +600,14 @@
           ],
           "settings": { "foreground": "#82e2ff", "fontStyle": "italic" }
         },
+        // mshr-h lumps wire/tri AND 'parameter'-inside-#() into
+        // storage.type.net — italic blue gives nets/params a style cue so
+        // 'parameter int' doesn't read as two identical blue words.
+        {
+          "name": "HDL — net types italic blue (mshr-h)",
+          "scope": ["storage.type.net.systemverilog"],
+          "settings": { "foreground": "#82e2ff", "fontStyle": "italic" }
+        },
 
         // ---- Definition names & callables -> orange ------------------------
         // Module/class/package/interface names, instance names, function/task
@@ -605,7 +638,10 @@
             "entity.name.section.entity_instantiation.vhdl",
             "entity.name.section.component_instantiation.vhdl",
             "entity.name.section.process.begin.vhdl",
-            "entity.name.section.process.end.vhdl"
+            "entity.name.section.process.end.vhdl",
+            "entity.name.section.systemverilog",
+            "entity.name.section.verilog",
+            "entity.name.goto-label.php"
           ],
           "settings": { "foreground": "#ffca85" }
         },
@@ -669,7 +705,7 @@
             "variable.parameter.vhdl",
             "variable.other.member.vhdl"
           ],
-          "settings": { "foreground": "#f694ff" }
+          "settings": { "foreground": "#f694ff", "fontStyle": "" }
         },
         {
           "name": "HDL — modports & attributes italic pink",
@@ -708,25 +744,30 @@
             "keyword.operator.param.systemverilog",
             "keyword.operator.param.verilog",
             "keyword.operator.scope.systemverilog",
-            "keyword.operator.scope.verilog"
+            "keyword.operator.scope.verilog",
+            "source.systemverilog keyword.operator.quantifier.regexp",
+            "source.verilog keyword.operator.quantifier.regexp"
           ],
           "settings": { "foreground": "#f694ff" }
         },
 
         // ---- VHDL structural punctuation -> quiet lavender -----------------
         // TerosHDL scopes EVERY paren/comma/semicolon/:=/=> as
-        // keyword.operator.vhdl; mshr-h uses punctuation.vhdl. Muted so
-        // identifiers and literals carry the color weight.
+        // keyword.operator.vhdl (one use-clause ';' as bare keyword.operator);
+        // mshr-h uses punctuation.vhdl. Muted so identifiers and literals
+        // carry the color weight. #b39ddb keeps clear separation from keyword
+        // purple #a277ff under color-vision deficiencies.
         {
           "name": "VHDL — structural punctuation lavender",
           "scope": [
             "keyword.operator.vhdl",
+            "source.vhdl keyword.operator",
             "punctuation.vhdl",
             "meta.item.stopping.character.vhdl",
             "punctual.vhdl",
             "punctuation.terminator.function_prototype.vhdl"
           ],
-          "settings": { "foreground": "#a08cd9" }
+          "settings": { "foreground": "#b39ddb" }
         },
         // 'end fifo;' echoes and 'end : label' echoes — de-emphasized
         {
@@ -736,7 +777,7 @@
             "entity.label.systemverilog",
             "entity.label.verilog"
           ],
-          "settings": { "foreground": "#a08cd9", "fontStyle": "italic" }
+          "settings": { "foreground": "#b39ddb", "fontStyle": "italic" }
         },
 
         // ---- Declaration-site names (VHDL) -> italic near-white ------------

@@ -1,0 +1,161 @@
+// ============================================================================
+//  Peacock favorites + Better Comments tags — Aura HDL companion set
+// ----------------------------------------------------------------------------
+//  Merge these top-level keys into settings.json on either station. They are
+//  theme-independent (Peacock paints workbench chrome; Better Comments paints
+//  editor decorations over any theme), so no "[*One Dark*]" scoping needed.
+//
+//  BETTER COMMENTS TAGS IN SYSTEMVERILOG (verified against the extension's
+//  parser, v3.0.2 — matching is case-insensitive, and the tag colors the
+//  whole rest of the line):
+//
+//    // ! async reset crosses domains — check before tapeout
+//    // ? can this underflow when almost_empty is high?
+//    // todo parameterize SYNC_STAGES
+//    // synthesis translate_off        <- pragma tags glow pink
+//
+//    /*
+//     ! block comments: tags go at LINE STARTS, no leading star
+//     todo this line is matched; "* todo" here would NOT be
+//    */
+//
+//    /** doc-style blocks are the exception:
+//     * note with a double-star opener, the leading "* " IS allowed
+//     * fixme so UVM/NaturalDocs-style headers can carry tags too
+//     */
+//
+//    // // two extra slashes = dead code, struck through
+// ============================================================================
+{
+  // -------- Peacock — Aura chrome shades -------------------------------------
+  // Bright shades = the theme accents; "Deep" shades are darkened variants
+  // that sit more quietly as title/status/activity chrome. "Night"/"Void"
+  // blend the chrome into the editor for a no-accent workspace.
+  "peacock.favoriteColors": [
+    { "name": "Aura Purple",        "value": "#a277ff" },
+    { "name": "Aura Purple · Deep", "value": "#7a57d1" },
+    { "name": "Aura Lavender",      "value": "#b39ddb" },
+    { "name": "Aura Pink",          "value": "#f694ff" },
+    { "name": "Aura Pink · Deep",   "value": "#c468d4" },
+    { "name": "Aura Mint",          "value": "#61ffca" },
+    { "name": "Aura Mint · Deep",   "value": "#3ec9a0" },
+    { "name": "Aura Sky",           "value": "#82e2ff" },
+    { "name": "Aura Sky · Deep",    "value": "#57b0d6" },
+    { "name": "Aura Peach",         "value": "#ffca85" },
+    { "name": "Aura Peach · Deep",  "value": "#d89e5f" },
+    { "name": "Aura Red",           "value": "#ff6767" },
+    { "name": "Aura Red · Deep",    "value": "#c94f4f" },
+    { "name": "Aura Night",         "value": "#2e2b38" },
+    { "name": "Aura Void",          "value": "#100b15" }
+  ],
+  // Text on colored chrome: dark ink on bright shades, Aura white on deep ones.
+  "peacock.darkForegroundColor": "#140e1a",
+  "peacock.lightForegroundColor": "#edecee",
+  "peacock.surpriseMeOnStartup": false,
+  // Your UI hides the activity/status bars locally — the tab border and
+  // title bar still carry the accent; the other station shows all three.
+  "peacock.affectActivityBar": true,
+  "peacock.affectStatusBar": true,
+  "peacock.affectTitleBar": true,
+
+  // -------- Better Comments — Aura tag system --------------------------------
+  // Same semantics you had (!, ?, todo, fixme, note, *, //) recolored onto
+  // the Aura palette, plus HDL additions: hack/review/debug for code health,
+  // and pink pragma tags (synthesis/synopsys/verilator/pragma/xilinx) so
+  // comments that TOOLS read stand apart from comments humans read — pink,
+  // matching the theme's preprocessor/macro color.
+  "better-comments.multilineComments": true,
+  "better-comments.highlightPlainText": false,
+  "better-comments.tags": [
+    {
+      "tag": "!",
+      "color": "#ff6767",
+      "backgroundColor": "transparent",
+      "bold": true, "italic": false, "strikethrough": false, "underline": false
+    },
+    {
+      "tag": "?",
+      "color": "#82e2ff",
+      "backgroundColor": "transparent",
+      "bold": false, "italic": false, "strikethrough": false, "underline": false
+    },
+    {
+      "tag": "todo",
+      "color": "#ffca85",
+      "backgroundColor": "transparent",
+      "bold": true, "italic": false, "strikethrough": false, "underline": false
+    },
+    {
+      "tag": "fixme",
+      "color": "#ff6767",
+      "backgroundColor": "transparent",
+      "bold": true, "italic": true, "strikethrough": false, "underline": false
+    },
+    {
+      "tag": "hack",
+      "color": "#f694ff",
+      "backgroundColor": "transparent",
+      "bold": false, "italic": true, "strikethrough": false, "underline": false
+    },
+    {
+      "tag": "review",
+      "color": "#b39ddb",
+      "backgroundColor": "transparent",
+      "bold": false, "italic": false, "strikethrough": false, "underline": true
+    },
+    {
+      "tag": "note",
+      "color": "#61ffca",
+      "backgroundColor": "transparent",
+      "bold": false, "italic": false, "strikethrough": false, "underline": false
+    },
+    {
+      "tag": "*",
+      "color": "#61ffca",
+      "backgroundColor": "transparent",
+      "bold": true, "italic": false, "strikethrough": false, "underline": false
+    },
+    {
+      "tag": "debug",
+      "color": "#f694ff",
+      "backgroundColor": "transparent",
+      "bold": true, "italic": false, "strikethrough": false, "underline": false
+    },
+    {
+      "tag": "synthesis",
+      "color": "#f694ff",
+      "backgroundColor": "transparent",
+      "bold": true, "italic": false, "strikethrough": false, "underline": false
+    },
+    {
+      "tag": "synopsys",
+      "color": "#f694ff",
+      "backgroundColor": "transparent",
+      "bold": true, "italic": false, "strikethrough": false, "underline": false
+    },
+    {
+      "tag": "verilator",
+      "color": "#f694ff",
+      "backgroundColor": "transparent",
+      "bold": true, "italic": false, "strikethrough": false, "underline": false
+    },
+    {
+      "tag": "pragma",
+      "color": "#f694ff",
+      "backgroundColor": "transparent",
+      "bold": true, "italic": false, "strikethrough": false, "underline": false
+    },
+    {
+      "tag": "xilinx",
+      "color": "#f694ff",
+      "backgroundColor": "transparent",
+      "bold": true, "italic": false, "strikethrough": false, "underline": false
+    },
+    {
+      "tag": "//",
+      "color": "#514868",
+      "backgroundColor": "transparent",
+      "bold": false, "italic": false, "strikethrough": true, "underline": false
+    }
+  ]
+}

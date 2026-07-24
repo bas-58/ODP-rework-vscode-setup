@@ -31,6 +31,14 @@
   // Bright shades = the theme accents; "Deep" shades are darkened variants
   // that sit more quietly as title/status/activity chrome. "Night"/"Void"
   // blend the chrome into the editor for a no-accent workspace.
+  //
+  // REQUIRES the overlay from commit "Let Peacock override the chrome" or
+  // later: Peacock writes UNSCOPED workspace colors, and theme-scoped
+  // ("[*One Dark*]") keys outrank them — the overlay therefore keeps its
+  // activityBar/statusBar/titleBar backgrounds unscoped. If Peacock seems
+  // dead, the old scoped chrome keys are still in your settings.json —
+  // replace the whole "workbench.colorCustomizations" block with the
+  // current overlay's version.
   "peacock.favoriteColors": [
     { "name": "Aura Purple",        "value": "#a277ff" },
     { "name": "Aura Purple · Deep", "value": "#7a57d1" },

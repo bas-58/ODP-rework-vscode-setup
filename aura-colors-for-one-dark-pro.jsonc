@@ -35,6 +35,23 @@
 {
   // -------- Workbench / UI colors (full Aura palette + your local tweaks) ----
   "workbench.colorCustomizations": {
+    // ---- Peacock-compatible chrome (deliberately NOT theme-scoped) --------
+    // Theme-scoped keys ("[*One Dark*]") outrank Peacock's workspace-level
+    // colors, which silences Peacock entirely. These chrome keys stay
+    // unscoped so precedence becomes: Peacock (workspace) > these Aura
+    // defaults (user) > theme. Note: being unscoped, they apply under ANY
+    // theme on this station.
+    "activityBar.background": "#191521",
+    "activityBar.foreground": "#a277ff",
+    "activityBar.inactiveForeground": "#776882",
+    "activityBar.activeBorder": "#a277ff",
+    "activityBarBadge.background": "#f694ff",
+    "activityBarBadge.foreground": "#140E1A",
+    "statusBar.background": "#14111b",
+    "statusBar.foreground": "#adacae",
+    "titleBar.activeBackground": "#14111b",
+    "titleBar.inactiveBackground": "#2d2b38",
+
     "[*One Dark*]": {
       // Editor
       "editor.background": "#191521",
@@ -91,32 +108,23 @@
       "tab.inactiveForeground": "#6d6d6d",
       "tab.activeBorderTop": "#a277ff",
 
-      // Side bar / activity bar / panel / status bar / title bar
+      // Side bar / panel + chrome borders (chrome BACKGROUNDS moved to the
+      // unscoped section above so Peacock can override them)
       "sideBar.background": "#191521",
       "sideBar.foreground": "#cdccce",
       "sideBar.border": "#000000",
       "sideBarTitle.foreground": "#adacae",
       "sideBarSectionHeader.background": "#191521",
       "sideBarSectionHeader.foreground": "#adacae",
-      "activityBar.background": "#191521",
-      "activityBar.foreground": "#a277ff",
-      "activityBar.inactiveForeground": "#776882",
       "activityBar.border": "#000000",
-      "activityBar.activeBorder": "#a277ff",
-      "activityBarBadge.background": "#f694ff",
-      "activityBarBadge.foreground": "#140E1A",
       "panel.border": "#f694ff81",
       "panelTitle.activeBorder": "#61ffca",
       "panelTitle.activeForeground": "#cdccce",
-      "statusBar.background": "#14111b",
-      "statusBar.foreground": "#adacae",
       "statusBar.border": "#000000",
       "statusBar.noFolderBackground": "#100b15",
       "statusBar.debuggingForeground": "#140E1A",
       "statusBar.debuggingBackground": "#a19c77",
       "statusBarItem.activeBackground": "#a277ff",
-      "titleBar.activeBackground": "#14111b",
-      "titleBar.inactiveBackground": "#2d2b38",
       "titleBar.border": "#000000",
 
       // Base / chrome

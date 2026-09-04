@@ -1,352 +1,71 @@
-Three fixes, and the tail fade is the one that changes the feel — traces become comets that burn out rather than lines that fade as a whole.
+Three things before the files: the logo diagnostic, the scope reframe, and where AI lands.
 
-landing.js — scroll to top on refresh
+Logo not appearing
 
-Browsers restore scroll position on reload by default. With a sticky hero and scroll-driven parallax, landing mid-page looks broken. Force the top, but only on the landing page — docs pages should keep normal restoration.
+The template references {{ 'assets/logo.svg' | url }}, which resolves to docs/assets/logo.svg. Check:
 
-Add at the top of init():
+bash
+ls docs/assets/
 
-javascript
-  function init() {
-    var landing = document.querySelector(".ingot-landing");
+If your file is elsewhere or named differently, either move it or change the three <img src=...> references in home.html. If it's there and still blank, view source and click the rendered src — a 404 means Zensical didn't copy it, which happens if docs/assets/ was created after the dev server started. Restart the server.
 
-    if (landing) {
-      if ("scrollRestoration" in history) history.scrollRestoration = "manual";
-      window.scrollTo(0, 0);
-    } else if ("scrollRestoration" in history) {
-      history.scrollRestoration = "auto";
-      return;
-    }
+The logo
 
-    var reduced = ...
+An isometric ingot — a tapered bar, three lit faces, a highlight along the top edge. Reads as metal at 16px and at 200px.
 
-The early return when not on the landing page also stops the parallax from looking for elements that don't exist.
-
-traces.js — full rewrite
-
-Two structural changes: initial traces are simulated forward from the edge so they arrive with a real routed tail, and rendering is tail-first with per-segment gradients so the trail dims with distance from the head.
-
-javascript
-/**
- * Generative background for the Ingot landing page.
- *
- * Manhattan-routed traces cross the canvas end to end. Each is drawn as a
- * comet: full brightness for a span behind the head, then fading with
- * distance, then gone — so old path is culled rather than accumulating.
- * When a trace reaches the end of its life the head stops and the tail
- * retracts into it. Traces approaching their exit edge fade out. Nothing
- * pops.
- */
-
-(function () {
-  "use strict";
-
-  const GRID = 24;
-  const TRACES = 30;
-  const SPEED = 2.0;
-  const SILVER = "200, 208, 216";
-
-  const TAIL_FULL = 520;   // px behind the head at full brightness
-  const TAIL_FADE = 360;   // px over which the tail fades to nothing
-  const EDGE_FADE = 240;   // px from exit edge over which the trace dims
-  const RETRACT = 3.2;     // px/frame the tail shortens after the head stops
-
-  let canvas = null;
-  let ctx = null;
-  let width = 0;
-  let height = 0;
-  let traces = [];
-  let frame = null;
-
-  const snap = (v) => Math.round(v / GRID) * GRID;
-  const rand = (a, b) => a + Math.random() * (b - a);
-
-  // ---- Traces -----------------------------------------------------------
-
-  function newTrace() {
-    const fromLeft = Math.random() < 0.5;
-    const dir = fromLeft ? 1 : -1;
-    const x = fromLeft ? -GRID : width + GRID;
-    const y = snap(rand(GRID * 2, height - GRID * 2));
-    return {
-      x, y,
-      dx: dir, dy: 0, dir,
-      points: [[x, y]],
-      speed: SPEED * rand(0.85, 1.2),
-      life: 0,
-      maxLife: rand(1400, 2600),
-      turnIn: rand(160, 440),
-      width: Math.random() < 0.2 ? 2 : 1.2,
-      retracting: 0,           // frames since the head stopped
-    };
-  }
-
-  function turn(t) {
-    t.x = snap(t.x);
-    t.y = snap(t.y);
-    t.points.push([t.x, t.y]);
-
-    if (t.dy === 0) {
-      const nearTop = t.y < GRID * 4;
-      const nearBottom = height - t.y < GRID * 4;
-      const goDown = nearTop ? true : nearBottom ? false : Math.random() < 0.5;
-      t.dy = goDown ? 1 : -1;
-      t.dx = 0;
-      t.turnIn = rand(48, 168);
-    } else {
-      t.dx = t.dir;
-      t.dy = 0;
-      t.turnIn = rand(160, 440);
-    }
-  }
-
-  function advance(t) {
-    t.life += t.speed;
-    t.turnIn -= t.speed;
-    if (t.turnIn <= 0) turn(t);
-
-    t.x += t.dx * t.speed;
-    t.y += t.dy * t.speed;
-
-    if (t.dy !== 0 && (t.y < GRID || t.y > height - GRID)) t.dy = -t.dy;
-  }
-
-  function exited(t) {
-    return t.dir > 0 ? t.x > width + GRID * 2 : t.x < -GRID * 2;
-  }
-
-  /** One simulation step. Returns false when the trace should be replaced. */
-  function step(t) {
-    if (t.life >= t.maxLife || exited(t)) {
-      t.retracting += 1;
-      return t.retracting * RETRACT < TAIL_FULL + TAIL_FADE;
-    }
-    advance(t);
-    return true;
-  }
-
-  // ---- Rendering --------------------------------------------------------
-
-  function edgeAlpha(t) {
-    const toEdge = t.dir > 0 ? width - t.x : t.x;
-    return Math.max(0, Math.min(1, toEdge / EDGE_FADE));
-  }
-
-  function tailAlphaAt(distance, tailFull, tailEnd) {
-    if (distance <= tailFull) return 1;
-    if (distance >= tailEnd) return 0;
-    const u = (distance - tailFull) / (tailEnd - tailFull);
-    return 1 - u * u;                     // ease-out
-  }
-
-  function drawTrace(t) {
-    const fadeIn = Math.min(1, t.life / 20);
-    const base = 0.9 * fadeIn * edgeAlpha(t);
-    if (base <= 0.005) return;
-
-    // Retracting shortens the tail from the far end.
-    const shrink = t.retracting * RETRACT;
-    const tailFull = Math.max(0, TAIL_FULL - shrink);
-    const tailEnd = Math.max(0, TAIL_FULL + TAIL_FADE - shrink);
-    if (tailEnd <= 0) return;
-
-    const path = [...t.points, [t.x, t.y]];
-    ctx.lineWidth = t.width;
-
-    // Walk from the head backward, drawing each segment with a gradient
-    // by distance from the head. Cull points beyond the tail.
-    let cumulative = 0;
-    let keepFrom = 0;
-
-    for (let i = path.length - 1; i > 0; i--) {
-      const [hx, hy] = path[i];       // nearer the head
-      const [tx, ty] = path[i - 1];   // nearer the tail
-      const length = Math.abs(hx - tx) + Math.abs(hy - ty);
-      if (length === 0) continue;
-
-      const dNear = cumulative;
-      const dFar = cumulative + length;
-      cumulative = dFar;
-
-      if (dNear >= tailEnd) { keepFrom = i; break; }
-
-      const aNear = base * tailAlphaAt(dNear, tailFull, tailEnd);
-      const aFar = base * tailAlphaAt(Math.min(dFar, tailEnd), tailFull, tailEnd);
-
-      // Clip the far end to where alpha reaches zero so we don't draw
-      // invisible length.
-      let ex = tx, ey = ty;
-      if (dFar > tailEnd) {
-        const f = (tailEnd - dNear) / length;
-        ex = hx + (tx - hx) * f;
-        ey = hy + (ty - hy) * f;
-        keepFrom = i - 1;
-      }
-
-      const grad = ctx.createLinearGradient(hx, hy, ex, ey);
-      grad.addColorStop(0, `rgba(${SILVER}, ${aNear})`);
-      grad.addColorStop(1, `rgba(${SILVER}, ${aFar})`);
-      ctx.strokeStyle = grad;
-      ctx.beginPath();
-      ctx.moveTo(hx, hy);
-      ctx.lineTo(ex, ey);
-      ctx.stroke();
-    }
-
-    if (keepFrom > 0) t.points.splice(0, keepFrom);
-
-    // Vias at turns still within the visible tail.
-    cumulative = 0;
-    for (let i = path.length - 1; i > 0; i--) {
-      cumulative += Math.abs(path[i][0] - path[i - 1][0]) + Math.abs(path[i][1] - path[i - 1][1]);
-      if (cumulative >= tailEnd) break;
-      const a = base * tailAlphaAt(cumulative, tailFull, tailEnd);
-      if (a < 0.02 || i - 1 === 0) continue;
-      ctx.fillStyle = `rgba(${SILVER}, ${a})`;
-      ctx.beginPath();
-      ctx.arc(path[i - 1][0], path[i - 1][1], 2.4, 0, Math.PI * 2);
-      ctx.fill();
-    }
-
-    // Head glow — dims as the trace retracts.
-    const headAlpha = base * (tailEnd / (TAIL_FULL + TAIL_FADE));
-    if (headAlpha > 0.02) {
-      ctx.save();
-      ctx.shadowColor = `rgba(${SILVER}, ${Math.min(1, headAlpha * 1.4)})`;
-      ctx.shadowBlur = 10;
-      ctx.fillStyle = `rgba(255, 255, 255, ${Math.min(1, headAlpha * 1.2)})`;
-      ctx.beginPath();
-      ctx.arc(t.x, t.y, 2.2, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.restore();
-    }
-  }
-
-  function draw() {
-    if (!ctx) return;
-    ctx.clearRect(0, 0, width, height);
-    ctx.lineCap = "butt";
-    ctx.lineJoin = "miter";
-
-    for (let i = 0; i < traces.length; i++) {
-      drawTrace(traces[i]);
-      if (!step(traces[i])) {
-        traces[i] = newTrace();
-        traces[i].life = -rand(0, 160);   // stagger re-entry
-      }
-    }
-    frame = requestAnimationFrame(draw);
-  }
-
-  // ---- Lifecycle --------------------------------------------------------
-
-  function seed() {
-    traces = [];
-    for (let i = 0; i < TRACES; i++) {
-      const t = newTrace();
-      // Simulate forward so the trace arrives with a real routed tail,
-      // instead of appearing mid-canvas as a point.
-      const steps = Math.floor(rand(0, (width / SPEED) * 0.9));
-      for (let s = 0; s < steps && !exited(t); s++) advance(t);
-      if (exited(t)) { i--; continue; }
-      traces.push(t);
-    }
-  }
-
-  function resize() {
-    if (!canvas) return;
-    const rect = canvas.parentElement.getBoundingClientRect();
-    if (rect.width === 0 || rect.height === 0) {
-      requestAnimationFrame(resize);
-      return;
-    }
-    const dpr = Math.min(2, window.devicePixelRatio || 1);
-    width = Math.floor(rect.width);
-    height = Math.floor(rect.height);
-    canvas.width = width * dpr;
-    canvas.height = height * dpr;
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    seed();
-  }
-
-  function stop() {
-    if (frame !== null) cancelAnimationFrame(frame);
-    frame = null;
-    window.removeEventListener("resize", resize);
-    canvas = ctx = null;
-    traces = [];
-  }
-
-  function start() {
-    stop();
-    canvas = document.getElementById("ingot-traces");
-    if (!canvas) return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    ctx = canvas.getContext("2d");
-    window.addEventListener("resize", resize);
-    resize();
-    draw();
-  }
-
-  if (typeof document$ !== "undefined" && document$.subscribe) {
-    document$.subscribe(start);
-  } else if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", start);
-  } else {
-    start();
-  }
-})();
-What each fix does
-
-Mid-screen starts — seed() creates each trace at its edge and runs advance() a random number of times without drawing. On load, every trace has a genuine routed path behind it. Anything that would have already exited gets rerolled.
-
-Tail fade — the polyline is walked from the head backward. The first 520px stay at full alpha, the next 360px fade with an ease-out curve, and anything beyond is culled from points so the array never grows. Each segment is a linear gradient, so the fade is smooth even across a single long run.
-
-Burn-out — when a trace hits maxLife or exits, the head stops and retracting counts up. Each frame shortens the visible tail from the far end until nothing remains, then the trace is replaced. Combined with the edge fade, there's no moment where a trace disappears abruptly.
-
-Per-trace speed — slight variation so the field doesn't move in lockstep.
-
-Tuning knobs
-
-TAIL_FULL and TAIL_FADE are the ones to adjust by eye. Longer TAIL_FULL means more line on screen at once; longer TAIL_FADE means a softer comet. If it reads as too sparse, raise TRACES to 40 — the culling keeps per-trace draw cost bounded, so it scales fine.
-
-Just do one more pass over everything, clean up anything you wish. Take some style liberties. Make any improvements you can think of at all (feel free to add dummy sections I will fill out later if that allows you more creative freedom). Design a better logo if you wish. Really take some time on this final pass and drop all files.
-
-Full pass. Seven files. I've added a fixed nav (the landing had no navigation once Material's header was hidden), a tools strip, a how-it-works flow, an animated profiles diagram, a roadmap placeholder, and a footer — plus cursor-tracking glow on cards, sequential terminal reveal, and animated stat counters.
-
-docs/assets/logo-mark.svg
-
-Optional — a stacked-ingot mark that works at favicon size and echoes the layered-library idea. Yours stays at logo.svg; swap if you prefer this one.
+docs/assets/logo.svg
 
 xml
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Ingot">
   <defs>
-    <linearGradient id="ingot-face" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#E4E9EE"/>
-      <stop offset="1" stop-color="#9AA5B1"/>
+    <linearGradient id="top" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#F2F5F8"/>
+      <stop offset="1" stop-color="#C4CCD4"/>
     </linearGradient>
-    <linearGradient id="ingot-edge" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.9"/>
-      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0.2"/>
+    <linearGradient id="left" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#A9B3BE"/>
+      <stop offset="1" stop-color="#6E7883"/>
+    </linearGradient>
+    <linearGradient id="right" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#7C8791"/>
+      <stop offset="1" stop-color="#3E464E"/>
+    </linearGradient>
+    <linearGradient id="gleam" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0"/>
+      <stop offset="0.5" stop-color="#FFFFFF" stop-opacity="0.95"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
     </linearGradient>
   </defs>
 
-  <!-- bottom bar -->
-  <path d="M9 48 L14.5 38 H49.5 L55 48 Z" fill="url(#ingot-face)"/>
-  <path d="M14.5 38 H49.5" stroke="url(#ingot-edge)" stroke-width="1.2"/>
+  <!-- shadow -->
+  <ellipse cx="32" cy="52" rx="22" ry="4" fill="#000" opacity="0.28"/>
 
-  <!-- middle bar -->
-  <path d="M14.5 34 L20 24 H44 L49.5 34 Z" fill="url(#ingot-face)"/>
-  <path d="M20 24 H44" stroke="url(#ingot-edge)" stroke-width="1.2"/>
+  <!-- front-left face -->
+  <path d="M12 27 L32 37 L32 50 L15.5 41.5 Z" fill="url(#left)"/>
+  <!-- front-right face -->
+  <path d="M32 37 L52 27 L48.5 41.5 L32 50 Z" fill="url(#right)"/>
+  <!-- top face -->
+  <path d="M12 27 L32 17 L52 27 L32 37 Z" fill="url(#top)"/>
 
-  <!-- top bar -->
-  <path d="M20 20 L25.5 10 H38.5 L44 20 Z" fill="url(#ingot-face)"/>
-  <path d="M25.5 10 H38.5" stroke="url(#ingot-edge)" stroke-width="1.2"/>
+  <!-- edge definition -->
+  <path d="M12 27 L32 37 L52 27" fill="none" stroke="#0F1114" stroke-width="0.9" stroke-opacity="0.35" stroke-linejoin="round"/>
+  <path d="M32 37 L32 50" fill="none" stroke="#0F1114" stroke-width="0.9" stroke-opacity="0.45"/>
 
-  <!-- shadow separations -->
-  <path d="M14.5 38 L49.5 38" stroke="#0F1114" stroke-width="1.6" stroke-opacity="0.55"/>
-  <path d="M20 24 L44 24" stroke="#0F1114" stroke-width="1.6" stroke-opacity="0.55"/>
+  <!-- top-edge gleam -->
+  <path d="M14 26 L32 17 L50 26" fill="none" stroke="url(#gleam)" stroke-width="1.4" stroke-linecap="round"/>
+
+  <!-- stamped mark on the top face -->
+  <path d="M27 27 L32 24.5 L37 27 L32 29.5 Z" fill="none" stroke="#0F1114" stroke-width="0.8" stroke-opacity="0.3"/>
 </svg>
+
+The stamped diamond on the top face is the detail that says "ingot" rather than "box" — real bars carry a hallmark. It reads at small sizes as texture and at large sizes as intent.
+
+For the favicon, the same file works — the shape is bold enough at 16px. If the shadow muddies it, delete the <ellipse> for the favicon copy.
+
+Scope and AI
+
+The page now says platform for the whole HDL lifecycle, with verification shipping first — honest about what exists, clear about where it's going. AI gets its own section between the loop and the stats, positioned as infrastructure rather than a feature: agents use the same CLI as humans, every action is recorded, conventions live in the repo.
+
 overrides/home.html
 html
 {% extends "base.html" %}
@@ -354,10 +73,9 @@ html
 {% block styles %}
 {{ super() }}
 <style>
-  .md-header, .md-tabs__inner, .md-main { display: none; }
+  .md-header, .md-tabs__inner, .md-main, .md-footer { display: none; }
   .md-tabs { height: auto; overflow: visible; background: none; }
   .md-container { padding-top: 0; }
-  .md-footer { display: none; }
 </style>
 {% endblock %}
 
@@ -394,19 +112,19 @@ html
 
     <div class="ingot-container ingot-hero__content">
       <p class="ingot-hero__kicker">
-        <span class="ingot-pill">Verification platform</span>
-        <span class="ingot-pill ingot-pill--muted">VCS · VC Formal · open tooling</span>
+        <span class="ingot-pill">Silicon development platform</span>
+        <span class="ingot-pill ingot-pill--muted">ASIC · FPGA · Agent-ready</span>
       </p>
 
       <h1 class="ingot-hero__headline">
-        One command from source<br>to reproducible simulation.
+        The entire HDL lifecycle,<br>under one command.
       </h1>
 
       <p class="ingot-hero__lede">
-        Ingot wraps VCS in a CLI that manages compiled libraries, shares
-        analysis across build profiles, and prints the exact command to
-        reproduce any failure. Convention over configuration, incremental
-        by default.
+        Ingot takes ASIC and FPGA designs from source through verification,
+        synthesis, and implementation with one CLI, one manifest, and
+        reproducible results at every stage. Built for engineers and for the
+        agents that work alongside them.
       </p>
 
       <div class="ingot-hero__actions">
@@ -444,6 +162,8 @@ html
           <li>VCS</li>
           <li>VC Formal</li>
           <li>Verdi</li>
+          <li>Vivado</li>
+          <li>Libero</li>
           <li>slang</li>
           <li>Verible</li>
           <li>VSG</li>
@@ -454,21 +174,53 @@ html
     </section>
 
     <!-- ================================================================
+         Lifecycle
+         ================================================================ -->
+    <section class="ingot-section ingot-section--lifecycle" data-reveal>
+      <div class="ingot-container">
+        <p class="ingot-eyebrow">The platform</p>
+        <h2 class="ingot-section__title">One manifest describes the design. Every stage reads it.</h2>
+
+        <ol class="ingot-lifecycle">
+          <li class="ingot-stage is-live">
+            <span class="ingot-stage__badge">Shipping</span>
+            <h3>Verify</h3>
+            <p>Build profiles, per-unit libraries, reproducible seeds, regressions with a reproduce command on every failure.</p>
+          </li>
+          <li class="ingot-stage">
+            <span class="ingot-stage__badge">Next</span>
+            <h3>Prove</h3>
+            <p>VC Formal from the same manifest. The checkers you wrote for simulation, proven exhaustively.</p>
+          </li>
+          <li class="ingot-stage">
+            <span class="ingot-stage__badge">Planned</span>
+            <h3>Synthesize</h3>
+            <p>Vivado and Libero synthesis driven by the block manifest. Constraints and IP alongside RTL.</p>
+          </li>
+          <li class="ingot-stage">
+            <span class="ingot-stage__badge">Planned</span>
+            <h3>Implement</h3>
+            <p>Place, route, timing closure, bitstream. Same CLI, same conventions, same run history.</p>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- ================================================================
          Features
          ================================================================ -->
     <section class="ingot-section ingot-section--features" data-reveal>
       <div class="ingot-container">
-        <p class="ingot-eyebrow">What it does</p>
+        <p class="ingot-eyebrow">What it does today</p>
         <h2 class="ingot-section__title">The parts of the flow that were always manual.</h2>
 
-        <div class="ingot-grid">
+        <div class="ingot-grid ingot-grid--three">
           <article class="ingot-card" data-glow>
             <div class="ingot-card__icon">
               <svg viewBox="0 0 24 24"><path d="M12 2 2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
             </div>
             <h3>Build profiles</h3>
-            <p>Fast for regressions, debug for Verdi, coverage for closure.
-               Switching costs one elaboration — analysis is shared.</p>
+            <p>Fast for regressions, debug for Verdi, coverage for closure. Switching costs one elaboration — analysis is shared.</p>
             <a href="{{ 'concepts/profiles/' | url }}">How profiles work</a>
           </article>
 
@@ -477,8 +229,7 @@ html
               <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
             </div>
             <h3>Per-unit libraries</h3>
-            <p>Every block and library compiles once into its own VCS
-               library. Change one unit; only that unit re-analyzes.</p>
+            <p>Every block and library compiles once into its own VCS library. Change one unit; only that unit re-analyzes.</p>
             <a href="{{ 'concepts/units-and-libraries/' | url }}">The methodology</a>
           </article>
 
@@ -487,8 +238,7 @@ html
               <svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v6h-6"/></svg>
             </div>
             <h3>Reproducible failures</h3>
-            <p>Every run records its seed. Every failure prints the command
-               to reproduce it, and the one to open it in a debugger.</p>
+            <p>Every run records its seed. Every failure prints the command to reproduce it, and the one to open it in a debugger.</p>
             <a href="{{ 'guides/debug-a-failure/' | url }}">Debug a failure</a>
           </article>
 
@@ -497,9 +247,26 @@ html
               <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h10M4 18h6"/></svg>
             </div>
             <h3>Convention over configuration</h3>
-            <p>A block is four lines of TOML. Sources are discovered, order
-               is derived, include paths are found. Override only what differs.</p>
+            <p>A block is four lines of TOML. Sources are discovered, order is derived, include paths are found.</p>
             <a href="{{ 'reference/manifest/' | url }}">Manifest reference</a>
+          </article>
+
+          <article class="ingot-card" data-glow>
+            <div class="ingot-card__icon">
+              <svg viewBox="0 0 24 24"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg>
+            </div>
+            <h3>Every run recorded</h3>
+            <p>Tool, arguments, duration, exit status, log — appended to a history you can query. Benchmarks fall out for free.</p>
+            <a href="{{ 'concepts/benchmarks/' | url }}">See the numbers</a>
+          </article>
+
+          <article class="ingot-card ingot-card--accent" data-glow>
+            <div class="ingot-card__icon">
+              <svg viewBox="0 0 24 24"><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M5.6 18.4 7 17M17 7l1.4-1.4"/><circle cx="12" cy="12" r="4"/></svg>
+            </div>
+            <h3>Agent-ready</h3>
+            <p>The same CLI, structured output, and conventions checked into the repo. Agents work the way engineers do.</p>
+            <a href="#ingot-agents">Built for agents</a>
           </article>
         </div>
       </div>
@@ -517,8 +284,7 @@ html
           <li class="ingot-step">
             <span class="ingot-step__num">1</span>
             <h3>Declare a block</h3>
-            <p>Name, top module, dependencies. Ingot finds the sources,
-               derives compile order, and locates include paths.</p>
+            <p>Name, top module, dependencies. Ingot finds the sources, derives compile order, and locates include paths.</p>
 <pre class="ingot-code"><span class="k">[block]</span>
 name = <span class="s">"exemplar"</span>
 top  = <span class="s">"exemplar_tb"</span>
@@ -530,8 +296,7 @@ ing = <span class="s">"*"</span></pre>
           <li class="ingot-step">
             <span class="ingot-step__num">2</span>
             <h3>Build a profile</h3>
-            <p>Each unit analyzes into its own library once. Elaboration
-               is per profile — fast, debug, coverage, or your own.</p>
+            <p>Each unit analyzes into its own library once. Elaboration is per profile — fast, debug, coverage, or your own.</p>
 <pre class="ingot-code"><span class="p">$</span> ingot build exemplar -p fast
 <span class="c">  vlogan analyze   ing        1.8s</span>
 <span class="c">  vlogan analyze   exemplar   0.4s</span>
@@ -541,8 +306,7 @@ ing = <span class="s">"*"</span></pre>
           <li class="ingot-step">
             <span class="ingot-step__num">3</span>
             <h3>Simulate and regress</h3>
-            <p>Run one seed or a thousand against the same binary. Every
-               failure comes with its reproduce command.</p>
+            <p>Run one seed or a thousand against the same binary. Every failure comes with its reproduce command.</p>
 <pre class="ingot-code"><span class="p">$</span> ingot regress exemplar -j 8
 <span class="ok">  PASS</span>  smoke       seed=1847362
 <span class="ok">  PASS</span>  smoke       seed=90214477
@@ -561,35 +325,27 @@ ing = <span class="s">"*"</span></pre>
         <div class="ingot-split__text">
           <p class="ingot-eyebrow">Profiles</p>
           <h2 class="ingot-section__title">Analyze once. Elaborate as many ways as you need.</h2>
-          <p>Analysis depends only on sources and defines. Debug access,
-             coverage instrumentation, and Verdi integration are all
-             elaboration-time — so profiles share one analysis and
-             diverge only where the binary actually differs.</p>
+          <p>Analysis depends only on sources and defines. Debug access, coverage instrumentation, and Verdi integration are all elaboration-time — so profiles share one analysis and diverge only where the binary actually differs.</p>
           <a href="{{ 'concepts/profiles/' | url }}" class="ingot-link">Read about profiles</a>
         </div>
 
         <div class="ingot-diagram-wrap">
-          <svg class="ingot-diagram" viewBox="0 0 640 260" aria-labelledby="ingot-diagram-title" role="img">
+          <svg class="ingot-diagram" viewBox="0 0 640 260" role="img" aria-labelledby="ingot-diagram-title">
             <title id="ingot-diagram-title">Sources flow into one shared analysis, which fans out to fast, debug, and coverage elaborations.</title>
-
             <g class="ingot-diagram__node" style="--d: 0ms">
               <rect x="16" y="98" width="128" height="64" rx="10"/>
               <text x="80" y="126">sources</text>
               <text x="80" y="146" class="sub">design/ · verif/</text>
             </g>
-
             <path class="ingot-diagram__wire" pathLength="1" d="M144 130 H 232"/>
-
             <g class="ingot-diagram__node ingot-diagram__node--hub" style="--d: 220ms">
               <rect x="232" y="88" width="160" height="84" rx="10"/>
               <text x="312" y="122">analysis</text>
               <text x="312" y="144" class="sub">AN.DB — shared</text>
             </g>
-
             <path class="ingot-diagram__wire" pathLength="1" style="--d: 420ms" d="M392 130 H 432 V 48 H 480"/>
             <path class="ingot-diagram__wire" pathLength="1" style="--d: 520ms" d="M392 130 H 480"/>
             <path class="ingot-diagram__wire" pathLength="1" style="--d: 620ms" d="M392 130 H 432 V 212 H 480"/>
-
             <g class="ingot-diagram__node" style="--d: 700ms">
               <rect x="480" y="20" width="144" height="56" rx="10"/>
               <text x="552" y="44">fast</text>
@@ -618,10 +374,7 @@ ing = <span class="s">"*"</span></pre>
         <div class="ingot-split__text">
           <p class="ingot-eyebrow">The loop</p>
           <h2 class="ingot-section__title">Build once. Debug without rebuilding.</h2>
-          <p>When a seed fails, the output already contains the command to
-             reproduce it and the command to open it with waveforms. The
-             debug profile reuses every analysis, so you pay for one
-             elaboration and nothing else.</p>
+          <p>When a seed fails, the output already contains the command to reproduce it and the command to open it with waveforms. The debug profile reuses every analysis, so you pay for one elaboration and nothing else.</p>
           <a href="{{ 'guides/debug-a-failure/' | url }}" class="ingot-link">Debug a failure</a>
         </div>
 
@@ -640,6 +393,68 @@ ing = <span class="s">"*"</span></pre>
 <span class="line"><span class="p">$</span> ingot sim exemplar -t smoke -s 1847362 -p debug --waves</span>
 <span class="line">  vcs elaborate    <span class="t">58.0s</span>  ok   <span class="c">← analysis reused</span></span>
 <span class="line"><span class="fail">FAIL</span>  exemplar/smoke  seed=1847362  6.1s   <span class="c">waves: runs/smoke_1847362/dump.fsdb</span></span></pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================================================================
+         Agents
+         ================================================================ -->
+    <section class="ingot-section ingot-section--agents" id="ingot-agents" data-reveal>
+      <div class="ingot-container">
+        <div class="ingot-agents__head">
+          <p class="ingot-eyebrow">Agentic development</p>
+          <h2 class="ingot-section__title">Infrastructure for agents, not a feature bolted onto them.</h2>
+          <p class="ingot-agents__lede">
+            An agent that can run <code>ingot build</code> can do everything an engineer can, and
+            nothing an engineer can't. There is no separate AI interface — the CLI, the conventions,
+            and the review loop are the same for everyone who touches the repository.
+          </p>
+        </div>
+
+        <div class="ingot-agents__grid">
+          <div class="ingot-agents__points">
+            <div class="ingot-point">
+              <h3>Same tools, same rules</h3>
+              <p>Agents invoke the CLI a human would. Labels, templates, and commit attribution are enforced by the commands, not by the model's memory.</p>
+            </div>
+            <div class="ingot-point">
+              <h3>Structured everywhere</h3>
+              <p>Every command has <code>--json</code>. Every run lands in a history file. An agent triaging a regression reads data, not log text.</p>
+            </div>
+            <div class="ingot-point">
+              <h3>Conventions in the repo</h3>
+              <p><code>AGENTS.md</code> points at the same docs engineers read. First-pass conformance is measured, not assumed.</p>
+            </div>
+            <div class="ingot-point">
+              <h3>Bounded by design</h3>
+              <p>Agents push branches and open merge requests. They cannot merge to <code>main</code>. The review loop stays intact.</p>
+            </div>
+          </div>
+
+          <div class="ingot-terminal ingot-terminal--flat">
+            <div class="ingot-terminal__bar">
+              <span></span><span></span><span></span>
+              <em>agent session</em>
+            </div>
+<pre class="ingot-terminal__body ingot-terminal__body--json"><span class="p">$</span> ingot regress dma -p fast --json
+{
+  <span class="k">"block"</span>: <span class="s">"dma"</span>,
+  <span class="k">"profile"</span>: <span class="s">"fast"</span>,
+  <span class="k">"total"</span>: 24,
+  <span class="k">"passed"</span>: 23,
+  <span class="k">"failed"</span>: [{
+    <span class="k">"test"</span>: <span class="s">"burst_wrap"</span>,
+    <span class="k">"seed"</span>: 77120493,
+    <span class="k">"reason"</span>: <span class="s">"UVM_ERROR @ 12480ns: sb miscompare"</span>,
+    <span class="k">"log"</span>: <span class="s">"build/dma/fast/runs/…/sim.log"</span>
+  }]
+}
+
+<span class="p">$</span> ingot issue create --type bug --area dv-block \
+    --title <span class="s">"dma burst_wrap sb miscompare seed 77120493"</span>
+<span class="ok">#142</span> https://gitlab/…/issues/142</pre>
+          </div>
         </div>
       </div>
     </section>
@@ -665,48 +480,45 @@ ing = <span class="s">"*"</span></pre>
     </section>
 
     <!-- ================================================================
-         Roadmap (placeholder — fill in as capabilities land)
+         Roadmap
          ================================================================ -->
     <section class="ingot-section ingot-section--roadmap" data-reveal>
       <div class="ingot-container">
         <p class="ingot-eyebrow">Roadmap</p>
-        <h2 class="ingot-section__title">Where it's going.</h2>
+        <h2 class="ingot-section__title">Verification first. Then everything else.</h2>
 
         <ul class="ingot-roadmap">
           <li class="ingot-roadmap__item is-done">
             <span class="ingot-roadmap__marker"></span>
-            <div>
-              <h3>VCS flow with profiles</h3>
-              <p>Build, sim, regress. Per-unit libraries, shared analysis, reproducible seeds.</p>
-            </div>
+            <div><h3>VCS flow with profiles</h3><p>Build, sim, regress. Per-unit libraries, shared analysis, reproducible seeds.</p></div>
+          </li>
+          <li class="ingot-roadmap__item is-done">
+            <span class="ingot-roadmap__marker"></span>
+            <div><h3>Agent workflow</h3><p>GitLab integration, commit attribution, conventions in the repo.</p></div>
           </li>
           <li class="ingot-roadmap__item is-active">
             <span class="ingot-roadmap__marker"></span>
-            <div>
-              <h3>Fast gate with slang</h3>
-              <p>Elaboration-level checks in seconds, before VCS ever runs.</p>
-            </div>
+            <div><h3>Fast gate with slang</h3><p>Elaboration-level checks in seconds, before VCS ever runs.</p></div>
           </li>
           <li class="ingot-roadmap__item">
             <span class="ingot-roadmap__marker"></span>
-            <div>
-              <h3>VC Formal integration</h3>
-              <p>Prove properties from the same manifest. Same checkers, sim and formal.</p>
-            </div>
+            <div><h3>VC Formal</h3><p>Prove properties from the same manifest. Same checkers, sim and formal.</p></div>
           </li>
           <li class="ingot-roadmap__item">
             <span class="ingot-roadmap__marker"></span>
-            <div>
-              <h3>Coverage merge and trend</h3>
-              <p>Nightly closure numbers, published beside the docs.</p>
-            </div>
+            <div><h3>Coverage merge and trend</h3><p>Nightly closure numbers, published beside the docs.</p></div>
           </li>
           <li class="ingot-roadmap__item">
             <span class="ingot-roadmap__marker"></span>
-            <div>
-              <h3>Publishing</h3>
-              <p>Libraries and block templates as versioned packages. <code>ingot new-project</code>.</p>
-            </div>
+            <div><h3>Vivado synthesis and implementation</h3><p>Block designs, constraints, and IP under the same manifest. Bitstreams from the CLI.</p></div>
+          </li>
+          <li class="ingot-roadmap__item">
+            <span class="ingot-roadmap__marker"></span>
+            <div><h3>Libero flow</h3><p>The same commands, a different target.</p></div>
+          </li>
+          <li class="ingot-roadmap__item">
+            <span class="ingot-roadmap__marker"></span>
+            <div><h3>Publishing</h3><p>Libraries and block templates as versioned packages. <code>ingot new-project</code>.</p></div>
           </li>
         </ul>
       </div>
@@ -745,9 +557,7 @@ ing = <span class="s">"*"</span></pre>
           <a href="{{ 'contributing/' | url }}">Contributing</a>
           <a href="{{ 'decisions/0001-repo-structure/' | url }}">Decisions</a>
         </nav>
-        <p class="ingot-footer__meta">
-          Silicon design and verification platform for circuitware.
-        </p>
+        <p class="ingot-footer__meta">Silicon design and verification platform for circuitware.</p>
       </div>
     </footer>
 
@@ -757,1540 +567,205 @@ ing = <span class="s">"*"</span></pre>
 
 {% block content %}{% endblock %}
 {% block footer %}{% endblock %}
-docs/stylesheets/landing.css
+landing.css — additions
+
+Append to the existing file. Everything else stays.
+
 css
-/* =========================================================================
-   Ingot landing page
-   ========================================================================= */
+/* ---- Lifecycle -------------------------------------------------------- */
 
-.ingot-landing {
-  --ink:       #0F1114;
-  --ink-2:     #15181C;
-  --ink-3:     #1B1F24;
-  --steel:     #2E3338;
-  --silver:    #C8D0D8;
-  --silver-2:  #9AA5B1;
-  --text:      #E6EAEE;
-  --muted:     #8C96A0;
-  --line:      rgba(200, 208, 216, 0.11);
-  --ok:        #6FCF97;
-  --fail:      #F07178;
-  --ease:      cubic-bezier(0.22, 1, 0.36, 1);
-  --mono:      ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-
-  font-family: -apple-system, "Segoe UI", Inter, Roboto, "Helvetica Neue", sans-serif;
-  color: var(--text);
-  background: var(--ink);
-  -webkit-font-smoothing: antialiased;
+.ingot-section--lifecycle {
+  background: var(--ink-2);
+  padding-top: 4rem;
 }
 
-.ingot-container {
-  max-width: 68rem;
-  margin: 0 auto;
-  padding: 0 2rem;
+.ingot-lifecycle {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 0.75rem;
+  overflow: hidden;
+  background: rgba(10, 12, 14, 0.4);
 }
 
-/* ---- Navigation ------------------------------------------------------- */
+.ingot-stage {
+  position: relative;
+  padding: 1.75rem 1.5rem 2rem;
+  border-right: 1px solid var(--line);
+}
 
-.ingot-nav {
-  position: fixed;
+.ingot-stage:last-child {
+  border-right: none;
+}
+
+.ingot-stage::before {
+  content: "";
+  position: absolute;
   top: 0;
   left: 0;
   right: 0;
-  z-index: 50;
-  transition: background 0.35s, border-color 0.35s, backdrop-filter 0.35s;
-  border-bottom: 1px solid transparent;
+  height: 2px;
+  background: rgba(200, 208, 216, 0.15);
 }
 
-.ingot-nav.is-scrolled {
-  background: rgba(15, 17, 20, 0.72);
-  backdrop-filter: blur(14px) saturate(140%);
-  -webkit-backdrop-filter: blur(14px) saturate(140%);
-  border-bottom-color: var(--line);
+.ingot-stage.is-live::before {
+  background: linear-gradient(90deg, var(--silver), rgba(200, 208, 216, 0.3));
 }
 
-.ingot-nav__inner {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  height: 4rem;
-}
-
-.ingot-nav__links {
-  display: flex;
-  align-items: center;
-  gap: 1.75rem;
-}
-
-.ingot-nav__links a {
-  font-size: 0.85rem;
-  font-weight: 500;
-  color: var(--silver-2);
-  text-decoration: none;
-  transition: color 0.2s;
-}
-
-.ingot-nav__links a:hover {
-  color: #fff;
-}
-
-.ingot-nav__repo {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.4rem 0.8rem;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-}
-
-.ingot-nav__repo svg {
-  width: 0.9rem;
-  height: 0.9rem;
-  fill: currentColor;
-}
-
-/* ---- Lockup ----------------------------------------------------------- */
-
-.ingot-lockup {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.6rem;
-  color: var(--silver);
-  text-decoration: none;
-  font-size: 0.85rem;
+.ingot-stage__badge {
+  display: inline-block;
+  font-size: 0.65rem;
   font-weight: 600;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-}
-
-.ingot-lockup img {
-  height: 1.6rem;
-  width: auto;
-}
-
-.ingot-lockup--small {
-  font-size: 0.75rem;
-}
-
-.ingot-lockup--small img {
-  height: 1.3rem;
-}
-
-/* ---- Hero ------------------------------------------------------------- */
-
-.ingot-hero {
-  position: sticky;
-  top: 0;
-  z-index: 0;
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  overflow: hidden;
-  background:
-    radial-gradient(circle, rgba(200, 208, 216, 0.07) 1px, transparent 1.5px) 0 0 / 24px 24px,
-    var(--ink);
-}
-
-#ingot-traces {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  opacity: 0.7;
-  will-change: transform, opacity;
-  transform-origin: 50% 50%;
-}
-
-.ingot-hero__gradient {
-  position: absolute;
-  inset: 0;
-  background:
-    radial-gradient(ellipse 46% 72% at 22% 52%, rgba(15, 17, 20, 0.88) 0%, rgba(15, 17, 20, 0.36) 55%, transparent 100%),
-    linear-gradient(180deg, rgba(15, 17, 20, 0.5) 0%, transparent 18%, transparent 74%, var(--ink) 100%);
-  pointer-events: none;
-  will-change: opacity;
-}
-
-.ingot-hero__content {
-  position: relative;
-  z-index: 1;
-  padding-top: 8rem;
-  padding-bottom: 6rem;
-  max-width: 50rem;
-  animation: ingot-rise 0.9s var(--ease) both;
-  will-change: transform, opacity;
-}
-
-.ingot-hero__kicker {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin: 0 0 2rem;
-}
-
-.ingot-pill {
-  font-size: 0.72rem;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  padding: 0.35rem 0.75rem;
-  border-radius: 999px;
-  border: 1px solid rgba(200, 208, 216, 0.35);
-  color: var(--silver);
-}
-
-.ingot-pill--muted {
-  border-color: var(--line);
   color: var(--muted);
-  text-transform: none;
-  letter-spacing: 0.02em;
+  margin-bottom: 1rem;
 }
 
-.ingot-hero__headline {
-  font-size: clamp(2.3rem, 5.2vw, 3.6rem);
-  font-weight: 500;
-  line-height: 1.08;
-  letter-spacing: -0.022em;
-  margin: 0 0 1.5rem;
-  color: #fff;
-}
-
-.ingot-hero__lede {
-  font-size: 1.1rem;
-  line-height: 1.65;
-  color: var(--muted);
-  max-width: 36rem;
-  margin: 0 0 2.25rem;
-}
-
-.ingot-hero__actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-}
-
-.ingot-hero__cmd {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.75rem;
-  margin-top: 2.25rem;
-  padding: 0.6rem 0.6rem 0.6rem 1rem;
-  border-radius: 0.5rem;
-  border: 1px solid var(--line);
-  background: rgba(10, 12, 14, 0.6);
-  font-family: var(--mono);
-  font-size: 0.82rem;
-  color: var(--silver);
-}
-
-.ingot-hero__cmd code {
-  background: none;
-  padding: 0;
-  color: inherit;
-  font: inherit;
-}
-
-.ingot-copy {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 2rem;
-  height: 2rem;
-  border-radius: 0.35rem;
-  border: 1px solid var(--line);
-  background: transparent;
-  color: var(--silver-2);
-  cursor: pointer;
-  transition: background 0.2s, color 0.2s, border-color 0.2s;
-}
-
-.ingot-copy:hover {
-  background: rgba(200, 208, 216, 0.08);
-  color: #fff;
-}
-
-.ingot-copy.is-copied {
-  border-color: var(--ok);
+.ingot-stage.is-live .ingot-stage__badge {
   color: var(--ok);
 }
 
-.ingot-copy svg {
-  width: 1rem;
-  height: 1rem;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.8;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-.ingot-hero__scroll {
-  position: absolute;
-  left: 50%;
-  bottom: 2rem;
-  transform: translateX(-50%);
-  width: 1.5rem;
-  height: 1.5rem;
-  color: var(--muted);
-  opacity: 0.6;
-  animation: ingot-bob 2.2s ease-in-out infinite;
-}
-
-.ingot-hero__scroll svg {
-  width: 100%;
-  height: 100%;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.5;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-/* ---- Buttons ---------------------------------------------------------- */
-
-.ingot-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.85rem 1.5rem;
-  border-radius: 0.375rem;
-  font-size: 0.95rem;
-  font-weight: 600;
-  letter-spacing: 0.01em;
-  text-decoration: none;
-  border: 1px solid transparent;
-  transition: transform 0.25s var(--ease), box-shadow 0.25s var(--ease),
-              background 0.2s, border-color 0.2s;
-}
-
-.ingot-btn svg {
-  width: 1.1rem;
-  height: 1.1rem;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  transition: transform 0.25s var(--ease);
-}
-
-.ingot-btn--primary {
-  background: var(--silver);
-  color: var(--ink);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px -8px rgba(200, 208, 216, 0.35);
-}
-
-.ingot-btn--primary:hover {
-  background: #fff;
-  transform: translateY(-2px);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3), 0 14px 32px -8px rgba(200, 208, 216, 0.45);
-}
-
-.ingot-btn--primary:hover svg {
-  transform: translateX(3px);
-}
-
-.ingot-btn--ghost {
-  background: transparent;
-  color: var(--text);
-  border-color: rgba(200, 208, 216, 0.25);
-}
-
-.ingot-btn--ghost:hover {
-  border-color: rgba(200, 208, 216, 0.6);
-  background: rgba(200, 208, 216, 0.05);
-  transform: translateY(-2px);
-}
-
-/* ---- Sheet (everything that slides over the hero) --------------------- */
-
-.ingot-sheet {
-  position: relative;
-  z-index: 1;
-  margin-top: -2.5rem;
-  border-radius: 1.5rem 1.5rem 0 0;
-  background: var(--ink-2);
-  box-shadow: 0 -24px 48px -24px rgba(0, 0, 0, 0.8);
-}
-
-/* ---- Tools strip ------------------------------------------------------ */
-
-.ingot-strip {
-  padding: 2.25rem 0 0.5rem;
-}
-
-.ingot-strip__inner {
-  display: flex;
-  align-items: center;
-  gap: 1.5rem;
-  flex-wrap: wrap;
-}
-
-.ingot-strip__label {
-  font-size: 0.7rem;
-  font-weight: 600;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--muted);
-}
-
-.ingot-strip__list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.ingot-strip__list li {
-  font-size: 0.78rem;
-  font-weight: 500;
-  color: var(--silver-2);
-  padding: 0.35rem 0.75rem;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  transition: color 0.2s, border-color 0.2s;
-}
-
-.ingot-strip__list li:hover {
-  color: #fff;
-  border-color: rgba(200, 208, 216, 0.35);
-}
-
-/* ---- Sections --------------------------------------------------------- */
-
-.ingot-section {
-  position: relative;
-  padding: 6rem 0;
-}
-
-.ingot-section--features   { background: var(--ink-2); }
-.ingot-section--steps      { background: var(--ink); }
-.ingot-section--diagram    { background: var(--ink-2); }
-.ingot-section--terminal   { background: var(--ink); }
-.ingot-section--stats      { background: var(--steel); padding: 3.5rem 0; }
-.ingot-section--roadmap    { background: var(--ink-2); }
-.ingot-section--cta        { background: var(--ink); padding: 7rem 0; }
-
-.ingot-eyebrow {
-  font-size: 0.72rem;
-  font-weight: 600;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--silver-2);
-  margin: 0 0 0.75rem;
-}
-
-.ingot-section__title {
-  font-size: clamp(1.6rem, 3vw, 2.2rem);
-  font-weight: 500;
-  line-height: 1.2;
-  letter-spacing: -0.015em;
-  margin: 0 0 3rem;
-  color: #fff;
-  max-width: 34rem;
-}
-
-/* ---- Feature cards ---------------------------------------------------- */
-
-.ingot-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
-  gap: 1.25rem;
-}
-
-.ingot-card {
-  position: relative;
-  padding: 1.75rem;
-  border-radius: 0.6rem;
-  background: linear-gradient(160deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.01));
-  border: 1px solid var(--line);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 12px 32px -16px rgba(0, 0, 0, 0.6);
-  overflow: hidden;
-  transition: transform 0.35s var(--ease), box-shadow 0.35s var(--ease), border-color 0.35s;
-}
-
-.ingot-card::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(360px circle at var(--x, 50%) var(--y, 50%),
-              rgba(200, 208, 216, 0.10), transparent 60%);
-  opacity: 0;
-  transition: opacity 0.4s;
-  pointer-events: none;
-}
-
-.ingot-card:hover {
-  transform: translateY(-4px);
-  border-color: rgba(200, 208, 216, 0.28);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4), 0 24px 48px -16px rgba(0, 0, 0, 0.7);
-}
-
-.ingot-card:hover::before {
-  opacity: 1;
-}
-
-.ingot-card > * {
-  position: relative;
-}
-
-.ingot-card__icon {
-  width: 2.5rem;
-  height: 2.5rem;
-  margin-bottom: 1.25rem;
-  padding: 0.55rem;
-  border-radius: 0.4rem;
-  background: rgba(200, 208, 216, 0.08);
-  color: var(--silver);
-}
-
-.ingot-card__icon svg {
-  width: 100%;
-  height: 100%;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.6;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-.ingot-card h3 {
-  font-size: 1.05rem;
-  font-weight: 600;
-  margin: 0 0 0.6rem;
-  color: #fff;
-}
-
-.ingot-card p {
-  font-size: 0.9rem;
-  line-height: 1.6;
-  color: var(--muted);
-  margin: 0 0 1.25rem;
-}
-
-.ingot-card a,
-.ingot-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--silver);
-  text-decoration: none;
-}
-
-.ingot-card a::after,
-.ingot-link::after {
-  content: "→";
-  transition: transform 0.25s var(--ease);
-}
-
-.ingot-card a:hover::after,
-.ingot-link:hover::after {
-  transform: translateX(3px);
-}
-
-/* ---- Steps ------------------------------------------------------------ */
-
-.ingot-steps {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 2rem;
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  counter-reset: step;
-}
-
-.ingot-step {
-  position: relative;
-  padding-top: 0.5rem;
-}
-
-.ingot-step__num {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 2rem;
-  height: 2rem;
-  border-radius: 50%;
-  border: 1px solid rgba(200, 208, 216, 0.35);
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: var(--silver);
-  margin-bottom: 1rem;
-  background: var(--ink);
-}
-
-.ingot-step::before {
-  content: "";
-  position: absolute;
-  top: 1.5rem;
-  left: 2.5rem;
-  right: -2rem;
-  height: 1px;
-  background: linear-gradient(90deg, rgba(200, 208, 216, 0.25), rgba(200, 208, 216, 0.05));
-}
-
-.ingot-step:last-child::before {
-  display: none;
-}
-
-.ingot-step h3 {
-  font-size: 1rem;
+.ingot-stage h3 {
+  font-size: 1.15rem;
   font-weight: 600;
   margin: 0 0 0.5rem;
   color: #fff;
 }
 
-.ingot-step p {
-  font-size: 0.88rem;
-  line-height: 1.6;
-  color: var(--muted);
-  margin: 0 0 1rem;
+.ingot-stage:not(.is-live) h3 {
+  color: var(--silver-2);
 }
 
-.ingot-code {
-  margin: 0;
-  padding: 0.9rem 1rem;
-  border-radius: 0.45rem;
-  background: #0A0C0E;
-  border: 1px solid var(--line);
-  font-family: var(--mono);
-  font-size: 0.74rem;
-  line-height: 1.6;
-  color: var(--text);
-  overflow-x: auto;
-}
-
-.ingot-code .k  { color: var(--silver); }
-.ingot-code .s  { color: #B6D8A8; }
-.ingot-code .p  { color: var(--silver-2); }
-.ingot-code .c  { color: var(--muted); }
-.ingot-code .ok { color: var(--ok); }
-
-/* ---- Split + diagram -------------------------------------------------- */
-
-.ingot-split {
-  display: grid;
-  grid-template-columns: 1fr 1.2fr;
-  gap: 4rem;
-  align-items: center;
-}
-
-.ingot-split--reverse {
-  grid-template-columns: 1.2fr 1fr;
-}
-
-.ingot-split--reverse .ingot-split__text {
-  order: 2;
-}
-
-.ingot-split__text .ingot-section__title {
-  margin-bottom: 1.25rem;
-}
-
-.ingot-split__text p:not(.ingot-eyebrow) {
-  font-size: 1rem;
-  line-height: 1.65;
-  color: var(--muted);
-  margin: 0 0 1.5rem;
-}
-
-.ingot-diagram-wrap {
-  padding: 1.5rem;
-  border-radius: 0.75rem;
-  background: rgba(10, 12, 14, 0.55);
-  border: 1px solid var(--line);
-}
-
-.ingot-diagram {
-  width: 100%;
-  height: auto;
-  display: block;
-  font-family: var(--mono);
-}
-
-.ingot-diagram__node rect {
-  fill: rgba(255, 255, 255, 0.03);
-  stroke: rgba(200, 208, 216, 0.3);
-  stroke-width: 1;
-}
-
-.ingot-diagram__node--hub rect {
-  stroke: rgba(200, 208, 216, 0.6);
-  fill: rgba(200, 208, 216, 0.05);
-}
-
-.ingot-diagram__node text {
-  fill: #fff;
-  font-size: 13px;
-  font-weight: 600;
-  text-anchor: middle;
-}
-
-.ingot-diagram__node text.sub {
-  fill: var(--muted);
-  font-size: 10.5px;
-  font-weight: 400;
-}
-
-.ingot-diagram__wire {
-  fill: none;
-  stroke: rgba(200, 208, 216, 0.5);
-  stroke-width: 1.4;
-  stroke-dasharray: 1;
-  stroke-dashoffset: 1;
-}
-
-[data-reveal].is-visible .ingot-diagram__node {
-  animation: ingot-fade 0.6s var(--ease) both;
-  animation-delay: var(--d, 0ms);
-}
-
-[data-reveal].is-visible .ingot-diagram__wire {
-  animation: ingot-draw 0.9s var(--ease) forwards;
-  animation-delay: var(--d, 200ms);
-}
-
-.ingot-diagram__node {
-  opacity: 0;
-}
-
-/* ---- Terminal --------------------------------------------------------- */
-
-.ingot-terminal {
-  border-radius: 0.6rem;
-  overflow: hidden;
-  background: #0A0C0E;
-  border: 1px solid var(--line);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.5), 0 24px 64px -20px rgba(0, 0, 0, 0.8),
-              0 0 0 1px rgba(255, 255, 255, 0.02) inset;
-  transform: perspective(1200px) rotateY(-3deg) rotateX(1deg);
-  transition: transform 0.6s var(--ease);
-}
-
-.ingot-terminal:hover {
-  transform: perspective(1200px) rotateY(0) rotateX(0);
-}
-
-.ingot-terminal__bar {
-  display: flex;
-  align-items: center;
-  gap: 0.45rem;
-  padding: 0.7rem 1rem;
-  background: rgba(255, 255, 255, 0.03);
-  border-bottom: 1px solid rgba(200, 208, 216, 0.08);
-}
-
-.ingot-terminal__bar span {
-  width: 0.7rem;
-  height: 0.7rem;
-  border-radius: 50%;
-  background: rgba(200, 208, 216, 0.15);
-}
-
-.ingot-terminal__bar em {
-  margin-left: auto;
-  font-style: normal;
-  font-size: 0.7rem;
-  color: var(--muted);
-  font-family: var(--mono);
-}
-
-.ingot-terminal__body {
-  margin: 0;
-  padding: 1.25rem 1.5rem 1.5rem;
-  font-family: var(--mono);
-  font-size: 0.78rem;
-  line-height: 1.7;
-  color: var(--text);
-  background: transparent;
-  overflow-x: auto;
-}
-
-.ingot-terminal__body .line {
-  display: block;
-  opacity: 0;
-  transform: translateY(4px);
-  transition: opacity 0.3s, transform 0.3s var(--ease);
-}
-
-.ingot-terminal__body .line.show {
-  opacity: 1;
-  transform: none;
-}
-
-.ingot-terminal__body .p    { color: var(--silver-2); }
-.ingot-terminal__body .t    { color: var(--silver); }
-.ingot-terminal__body .ok   { color: var(--ok); }
-.ingot-terminal__body .fail { color: var(--fail); font-weight: 600; }
-.ingot-terminal__body .c    { color: var(--muted); font-style: italic; }
-
-/* ---- Stats ------------------------------------------------------------ */
-
-.ingot-stats {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 2rem;
-}
-
-.ingot-stat {
-  text-align: center;
-  padding: 0 1rem;
-}
-
-.ingot-stat + .ingot-stat {
-  border-left: 1px solid rgba(200, 208, 216, 0.12);
-}
-
-.ingot-stat strong {
-  display: block;
-  font-size: 2.4rem;
-  font-weight: 500;
-  letter-spacing: -0.02em;
-  color: #fff;
-  line-height: 1;
-  margin-bottom: 0.6rem;
-  font-variant-numeric: tabular-nums;
-}
-
-.ingot-stat span {
+.ingot-stage p {
   font-size: 0.85rem;
-  color: var(--silver-2);
-  line-height: 1.4;
-}
-
-/* ---- Roadmap ---------------------------------------------------------- */
-
-.ingot-roadmap {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  max-width: 40rem;
-  position: relative;
-}
-
-.ingot-roadmap::before {
-  content: "";
-  position: absolute;
-  left: 0.55rem;
-  top: 0.75rem;
-  bottom: 0.75rem;
-  width: 1px;
-  background: linear-gradient(180deg, rgba(200, 208, 216, 0.5), rgba(200, 208, 216, 0.06));
-}
-
-.ingot-roadmap__item {
-  position: relative;
-  display: grid;
-  grid-template-columns: 1.2rem 1fr;
-  gap: 1.25rem;
-  padding: 0.85rem 0;
-}
-
-.ingot-roadmap__marker {
-  width: 1.15rem;
-  height: 1.15rem;
-  border-radius: 50%;
-  border: 1px solid rgba(200, 208, 216, 0.35);
-  background: var(--ink-2);
-  margin-top: 0.15rem;
-  position: relative;
-}
-
-.ingot-roadmap__item.is-done .ingot-roadmap__marker {
-  background: var(--silver);
-  border-color: var(--silver);
-}
-
-.ingot-roadmap__item.is-done .ingot-roadmap__marker::after {
-  content: "";
-  position: absolute;
-  inset: 0.28rem;
-  border-radius: 50%;
-  background: var(--ink);
-}
-
-.ingot-roadmap__item.is-active .ingot-roadmap__marker {
-  border-color: var(--silver);
-  box-shadow: 0 0 0 4px rgba(200, 208, 216, 0.12);
-}
-
-.ingot-roadmap__item.is-active .ingot-roadmap__marker::after {
-  content: "";
-  position: absolute;
-  inset: 0.3rem;
-  border-radius: 50%;
-  background: var(--silver);
-  animation: ingot-pulse 2s ease-in-out infinite;
-}
-
-.ingot-roadmap__item h3 {
-  font-size: 0.98rem;
-  font-weight: 600;
-  margin: 0 0 0.25rem;
-  color: #fff;
-}
-
-.ingot-roadmap__item:not(.is-done):not(.is-active) h3 {
-  color: var(--silver-2);
-}
-
-.ingot-roadmap__item p {
-  font-size: 0.86rem;
   line-height: 1.55;
   color: var(--muted);
   margin: 0;
 }
 
-.ingot-roadmap__item code {
+/* ---- Three-column feature grid ---------------------------------------- */
+
+.ingot-grid--three {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.ingot-card--accent {
+  border-color: rgba(200, 208, 216, 0.28);
+  background: linear-gradient(160deg, rgba(200, 208, 216, 0.07), rgba(200, 208, 216, 0.02));
+}
+
+/* ---- Agents ----------------------------------------------------------- */
+
+.ingot-section--agents {
+  background:
+    radial-gradient(ellipse 60% 50% at 80% 0%, rgba(200, 208, 216, 0.05), transparent 60%),
+    var(--ink-3);
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.ingot-agents__head {
+  max-width: 44rem;
+  margin-bottom: 3.5rem;
+}
+
+.ingot-agents__head .ingot-section__title {
+  margin-bottom: 1.25rem;
+  max-width: none;
+}
+
+.ingot-agents__lede {
+  font-size: 1.05rem;
+  line-height: 1.65;
+  color: var(--muted);
+  margin: 0;
+}
+
+.ingot-agents__lede code,
+.ingot-point code {
   font-family: var(--mono);
-  font-size: 0.8em;
+  font-size: 0.86em;
   color: var(--silver);
   background: rgba(200, 208, 216, 0.08);
-  padding: 0.1em 0.35em;
+  padding: 0.1em 0.4em;
   border-radius: 0.25rem;
 }
 
-/* ---- CTA -------------------------------------------------------------- */
-
-.ingot-cta {
-  text-align: center;
-  max-width: 38rem;
-}
-
-.ingot-cta h2 {
-  font-size: clamp(1.8rem, 3.5vw, 2.4rem);
-  font-weight: 500;
-  letter-spacing: -0.015em;
-  margin: 0 0 0.75rem;
-  color: #fff;
-}
-
-.ingot-cta p {
-  color: var(--muted);
-  margin: 0 0 2rem;
-}
-
-.ingot-cta__actions {
-  justify-content: center;
-}
-
-/* ---- Footer ----------------------------------------------------------- */
-
-.ingot-footer {
-  padding: 3rem 0 2.5rem;
-  border-top: 1px solid var(--line);
-  background: var(--ink);
-}
-
-.ingot-footer__inner {
+.ingot-agents__grid {
   display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 1rem 3rem;
-  align-items: center;
+  grid-template-columns: 1fr 1.15fr;
+  gap: 3rem;
+  align-items: start;
 }
 
-.ingot-footer__links {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1.5rem;
-  justify-content: flex-end;
+.ingot-agents__points {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.75rem 2rem;
 }
 
-.ingot-footer__links a {
-  font-size: 0.82rem;
-  color: var(--silver-2);
-  text-decoration: none;
-  transition: color 0.2s;
-}
-
-.ingot-footer__links a:hover {
+.ingot-point h3 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin: 0 0 0.4rem;
   color: #fff;
 }
 
-.ingot-footer__meta {
-  grid-column: 1 / -1;
-  margin: 0.5rem 0 0;
-  font-size: 0.78rem;
+.ingot-point p {
+  font-size: 0.85rem;
+  line-height: 1.6;
   color: var(--muted);
+  margin: 0;
 }
 
-/* ---- Reveal on scroll ------------------------------------------------- */
-
-[data-reveal] {
-  opacity: 0;
-  transform: translateY(28px);
-  transition: opacity 0.8s var(--ease), transform 0.8s var(--ease);
-}
-
-[data-reveal].is-visible {
-  opacity: 1;
+.ingot-terminal--flat {
   transform: none;
 }
 
-/* ---- Motion ----------------------------------------------------------- */
-
-@keyframes ingot-rise {
-  from { opacity: 0; transform: translateY(20px); }
-  to   { opacity: 1; transform: none; }
+.ingot-terminal--flat:hover {
+  transform: none;
 }
 
-@keyframes ingot-fade {
-  from { opacity: 0; transform: translateY(6px); }
-  to   { opacity: 1; transform: none; }
+.ingot-terminal__body--json {
+  font-size: 0.74rem;
 }
 
-@keyframes ingot-draw {
-  to { stroke-dashoffset: 0; }
-}
+.ingot-terminal__body--json .k { color: var(--silver-2); }
+.ingot-terminal__body--json .s { color: #B6D8A8; }
 
-@keyframes ingot-bob {
-  0%, 100% { transform: translate(-50%, 0); }
-  50%      { transform: translate(-50%, 6px); }
-}
-
-@keyframes ingot-pulse {
-  0%, 100% { opacity: 1; }
-  50%      { opacity: 0.4; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .ingot-hero { position: relative; }
-  .ingot-hero__content, .ingot-hero__scroll { animation: none; }
-  [data-reveal] { opacity: 1; transform: none; transition: none; }
-  .ingot-terminal { transform: none; }
-  .ingot-terminal__body .line { opacity: 1; transform: none; transition: none; }
-  .ingot-diagram__node { opacity: 1; animation: none !important; }
-  .ingot-diagram__wire { stroke-dashoffset: 0; animation: none !important; }
-  .ingot-card, .ingot-btn, .ingot-nav { transition: none; }
-  .ingot-roadmap__item.is-active .ingot-roadmap__marker::after { animation: none; }
-}
-
-/* ---- Responsive ------------------------------------------------------- */
+/* ---- Responsive additions --------------------------------------------- */
 
 @media (max-width: 60rem) {
-  .ingot-split,
-  .ingot-split--reverse {
-    grid-template-columns: 1fr;
-    gap: 2.5rem;
-  }
-  .ingot-split--reverse .ingot-split__text { order: 0; }
-  .ingot-terminal { transform: none; }
-  .ingot-steps { grid-template-columns: 1fr; gap: 2.5rem; }
-  .ingot-step::before { display: none; }
-  .ingot-nav__links a:not(.ingot-nav__repo) { display: none; }
+  .ingot-grid--three { grid-template-columns: repeat(2, 1fr); }
+  .ingot-lifecycle { grid-template-columns: repeat(2, 1fr); }
+  .ingot-stage:nth-child(2) { border-right: none; }
+  .ingot-stage:nth-child(-n+2) { border-bottom: 1px solid var(--line); }
+  .ingot-agents__grid { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 40rem) {
-  .ingot-container { padding: 0 1.25rem; }
-  .ingot-hero { min-height: 100svh; }
-  .ingot-hero__content { padding-top: 6rem; padding-bottom: 5rem; }
-  .ingot-hero__cmd { font-size: 0.74rem; }
-  .ingot-section { padding: 4rem 0; }
-  .ingot-stats { grid-template-columns: 1fr; gap: 1.5rem; }
-  .ingot-stat + .ingot-stat {
-    border-left: none;
-    border-top: 1px solid rgba(200, 208, 216, 0.12);
-    padding-top: 1.5rem;
-  }
-  .ingot-terminal__body { font-size: 0.7rem; }
-  .ingot-footer__inner { grid-template-columns: 1fr; }
-  .ingot-footer__links { justify-content: flex-start; }
+  .ingot-grid--three { grid-template-columns: 1fr; }
+  .ingot-lifecycle { grid-template-columns: 1fr; }
+  .ingot-stage { border-right: none; border-bottom: 1px solid var(--line); }
+  .ingot-stage:last-child { border-bottom: none; }
+  .ingot-agents__points { grid-template-columns: 1fr; }
 }
-docs/javascripts/landing.js
-javascript
-/**
- * Landing page interaction.
- *
- * - Scroll to top on load (parallax assumes a known start)
- * - Nav becomes solid once scrolled
- * - Reveal-on-scroll for sections
- * - Hero parallax against the sticky background
- * - Cursor-tracking glow on feature cards
- * - Sequential terminal line reveal
- * - Animated stat counters
- * - Copy button on the install command
- *
- * Everything respects prefers-reduced-motion.
- */
 
-(function () {
-  "use strict";
+traces.js and landing.js are unchanged.
 
-  function init() {
-    var landing = document.querySelector(".ingot-landing");
+Assumptions I made
 
-    if (!landing) {
-      if ("scrollRestoration" in history) history.scrollRestoration = "auto";
-      return;
-    }
+Lifecycle badges — Verify is "Shipping," Prove is "Next," Synthesize and Implement are "Planned." Adjust as reality shifts; the is-live class drives the green badge and the bright top border.
 
-    if ("scrollRestoration" in history) history.scrollRestoration = "manual";
-    window.scrollTo(0, 0);
+The agent terminal shows --json output and an ingot issue create — both exist. The dma block and issue number are illustrative; swap for real output when you have a real block.
 
-    var reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+Tools strip includes Vivado and Libero because they're in scope, not because they're integrated. If that reads as a claim you'd rather not make yet, move them to the roadmap only.
 
-    initNav();
-    initCopy();
-    initReveal(reduced);
-    if (!reduced) {
-      initParallax();
-      initCardGlow();
-    }
-  }
+The AI section links from the sixth feature card via #ingot-agents. It sits between the terminal and stats — far enough down to be substantive, not so far that it's buried.
 
-  // ---- Nav --------------------------------------------------------------
-
-  function initNav() {
-    var nav = document.querySelector(".ingot-nav");
-    if (!nav) return;
-    var apply = function () {
-      nav.classList.toggle("is-scrolled", window.scrollY > 24);
-    };
-    window.addEventListener("scroll", apply, { passive: true });
-    apply();
-  }
-
-  // ---- Copy button ------------------------------------------------------
-
-  function initCopy() {
-    document.querySelectorAll(".ingot-copy[data-copy]").forEach(function (btn) {
-      btn.addEventListener("click", function () {
-        var text = btn.getAttribute("data-copy");
-        var done = function () {
-          btn.classList.add("is-copied");
-          setTimeout(function () { btn.classList.remove("is-copied"); }, 1600);
-        };
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-          navigator.clipboard.writeText(text).then(done, done);
-        } else {
-          var ta = document.createElement("textarea");
-          ta.value = text;
-          document.body.appendChild(ta);
-          ta.select();
-          try { document.execCommand("copy"); } catch (e) {}
-          document.body.removeChild(ta);
-          done();
-        }
-      });
-    });
-  }
-
-  // ---- Reveal -----------------------------------------------------------
-
-  function initReveal(reduced) {
-    var targets = document.querySelectorAll("[data-reveal]");
-
-    var onVisible = function (el) {
-      el.classList.add("is-visible");
-      var terminal = el.querySelector("[data-terminal]");
-      if (terminal) revealTerminal(terminal, reduced);
-      el.querySelectorAll("[data-count]").forEach(function (n) {
-        animateCount(n, reduced);
-      });
-    };
-
-    if (reduced || !("IntersectionObserver" in window)) {
-      targets.forEach(onVisible);
-      return;
-    }
-
-    var observer = new IntersectionObserver(function (entries) {
-      entries.forEach(function (entry) {
-        if (entry.isIntersecting) {
-          onVisible(entry.target);
-          observer.unobserve(entry.target);
-        }
-      });
-    }, { threshold: 0.12, rootMargin: "0px 0px -80px 0px" });
-
-    targets.forEach(function (el) { observer.observe(el); });
-  }
-
-  function revealTerminal(terminal, reduced) {
-    var lines = terminal.querySelectorAll(".line");
-    if (reduced) {
-      lines.forEach(function (l) { l.classList.add("show"); });
-      return;
-    }
-    lines.forEach(function (line, i) {
-      setTimeout(function () { line.classList.add("show"); }, 90 * i + 200);
-    });
-  }
-
-  function animateCount(el, reduced) {
-    var target = parseFloat(el.getAttribute("data-count"));
-    var suffix = el.getAttribute("data-suffix") || "";
-    if (isNaN(target) || reduced) {
-      el.textContent = target + suffix;
-      return;
-    }
-    var duration = 900;
-    var start = null;
-    function tick(ts) {
-      if (start === null) start = ts;
-      var p = Math.min(1, (ts - start) / duration);
-      var eased = 1 - Math.pow(1 - p, 3);
-      el.textContent = Math.round(target * eased) + suffix;
-      if (p < 1) requestAnimationFrame(tick);
-    }
-    requestAnimationFrame(tick);
-  }
-
-  // ---- Parallax ---------------------------------------------------------
-
-  function initParallax() {
-    var hero = document.querySelector(".ingot-hero");
-    var canvas = document.getElementById("ingot-traces");
-    var content = document.querySelector(".ingot-hero__content");
-    var gradient = document.querySelector(".ingot-hero__gradient");
-    if (!hero || !canvas || !content) return;
-
-    var ticking = false;
-
-    function update() {
-      var heroHeight = hero.offsetHeight || 1;
-      var y = Math.max(0, window.scrollY);
-      var progress = Math.min(1, y / heroHeight);
-
-      content.style.transform = "translateY(" + (-y * 0.28) + "px)";
-      content.style.opacity = String(Math.max(0, 1 - progress * 1.4));
-
-      canvas.style.transform = "scale(" + (1 + progress * 0.08) + ")";
-      canvas.style.opacity = String(0.7 * (1 - progress * 0.6));
-      if (gradient) gradient.style.opacity = String(1 + progress * 0.8);
-
-      ticking = false;
-    }
-
-    window.addEventListener("scroll", function () {
-      if (!ticking) {
-        ticking = true;
-        requestAnimationFrame(update);
-      }
-    }, { passive: true });
-
-    update();
-  }
-
-  // ---- Card glow --------------------------------------------------------
-
-  function initCardGlow() {
-    document.querySelectorAll("[data-glow]").forEach(function (card) {
-      card.addEventListener("pointermove", function (e) {
-        var r = card.getBoundingClientRect();
-        card.style.setProperty("--x", ((e.clientX - r.left) / r.width * 100) + "%");
-        card.style.setProperty("--y", ((e.clientY - r.top) / r.height * 100) + "%");
-      });
-    });
-  }
-
-  // ---- Boot -------------------------------------------------------------
-
-  if (typeof document$ !== "undefined" && document$.subscribe) {
-    document$.subscribe(init);
-  } else if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", init);
-  } else {
-    init();
-  }
-})();
-docs/javascripts/traces.js
-
-Unchanged from the last pass except two additions: pause when the tab is hidden, and pause once the hero has scrolled out of view — no reason to burn CPU animating something covered by the sheet.
-
-javascript
-/**
- * Generative background for the Ingot landing page.
- *
- * Manhattan-routed traces cross the canvas end to end. Each is drawn as a
- * comet: full brightness behind the head, then fading with distance, then
- * culled. When a trace reaches the end of its life the head stops and the
- * tail retracts into it. Traces approaching their exit edge fade out.
- *
- * Pauses when the tab is hidden or the hero is scrolled out of view.
- */
-
-(function () {
-  "use strict";
-
-  const GRID = 24;
-  const TRACES = 30;
-  const SPEED = 2.0;
-  const SILVER = "200, 208, 216";
-
-  const TAIL_FULL = 520;
-  const TAIL_FADE = 360;
-  const EDGE_FADE = 240;
-  const RETRACT = 3.2;
-
-  let canvas = null;
-  let ctx = null;
-  let width = 0;
-  let height = 0;
-  let traces = [];
-  let frame = null;
-  let paused = false;
-  let visibilityObserver = null;
-
-  const snap = (v) => Math.round(v / GRID) * GRID;
-  const rand = (a, b) => a + Math.random() * (b - a);
-
-  function newTrace() {
-    const fromLeft = Math.random() < 0.5;
-    const dir = fromLeft ? 1 : -1;
-    const x = fromLeft ? -GRID : width + GRID;
-    const y = snap(rand(GRID * 2, height - GRID * 2));
-    return {
-      x, y, dx: dir, dy: 0, dir,
-      points: [[x, y]],
-      speed: SPEED * rand(0.85, 1.2),
-      life: 0,
-      maxLife: rand(1400, 2600),
-      turnIn: rand(160, 440),
-      width: Math.random() < 0.2 ? 2 : 1.2,
-      retracting: 0,
-    };
-  }
-
-  function turn(t) {
-    t.x = snap(t.x);
-    t.y = snap(t.y);
-    t.points.push([t.x, t.y]);
-    if (t.dy === 0) {
-      const nearTop = t.y < GRID * 4;
-      const nearBottom = height - t.y < GRID * 4;
-      const goDown = nearTop ? true : nearBottom ? false : Math.random() < 0.5;
-      t.dy = goDown ? 1 : -1;
-      t.dx = 0;
-      t.turnIn = rand(48, 168);
-    } else {
-      t.dx = t.dir;
-      t.dy = 0;
-      t.turnIn = rand(160, 440);
-    }
-  }
-
-  function advance(t) {
-    t.life += t.speed;
-    t.turnIn -= t.speed;
-    if (t.turnIn <= 0) turn(t);
-    t.x += t.dx * t.speed;
-    t.y += t.dy * t.speed;
-    if (t.dy !== 0 && (t.y < GRID || t.y > height - GRID)) t.dy = -t.dy;
-  }
-
-  function exited(t) {
-    return t.dir > 0 ? t.x > width + GRID * 2 : t.x < -GRID * 2;
-  }
-
-  function step(t) {
-    if (t.life >= t.maxLife || exited(t)) {
-      t.retracting += 1;
-      return t.retracting * RETRACT < TAIL_FULL + TAIL_FADE;
-    }
-    advance(t);
-    return true;
-  }
-
-  function edgeAlpha(t) {
-    const toEdge = t.dir > 0 ? width - t.x : t.x;
-    return Math.max(0, Math.min(1, toEdge / EDGE_FADE));
-  }
-
-  function tailAlphaAt(d, full, end) {
-    if (d <= full) return 1;
-    if (d >= end) return 0;
-    const u = (d - full) / (end - full);
-    return 1 - u * u;
-  }
-
-  function drawTrace(t) {
-    const fadeIn = Math.min(1, Math.max(0, t.life) / 20);
-    const base = 0.9 * fadeIn * edgeAlpha(t);
-    if (base <= 0.005) return;
-
-    const shrink = t.retracting * RETRACT;
-    const tailFull = Math.max(0, TAIL_FULL - shrink);
-    const tailEnd = Math.max(0, TAIL_FULL + TAIL_FADE - shrink);
-    if (tailEnd <= 0) return;
-
-    const path = [...t.points, [t.x, t.y]];
-    ctx.lineWidth = t.width;
-
-    let cumulative = 0;
-    let keepFrom = 0;
-
-    for (let i = path.length - 1; i > 0; i--) {
-      const [hx, hy] = path[i];
-      const [tx, ty] = path[i - 1];
-      const length = Math.abs(hx - tx) + Math.abs(hy - ty);
-      if (length === 0) continue;
-
-      const dNear = cumulative;
-      const dFar = cumulative + length;
-      cumulative = dFar;
-      if (dNear >= tailEnd) { keepFrom = i; break; }
-
-      const aNear = base * tailAlphaAt(dNear, tailFull, tailEnd);
-      const aFar = base * tailAlphaAt(Math.min(dFar, tailEnd), tailFull, tailEnd);
-
-      let ex = tx, ey = ty;
-      if (dFar > tailEnd) {
-        const f = (tailEnd - dNear) / length;
-        ex = hx + (tx - hx) * f;
-        ey = hy + (ty - hy) * f;
-        keepFrom = i - 1;
-      }
-
-      const grad = ctx.createLinearGradient(hx, hy, ex, ey);
-      grad.addColorStop(0, `rgba(${SILVER}, ${aNear})`);
-      grad.addColorStop(1, `rgba(${SILVER}, ${aFar})`);
-      ctx.strokeStyle = grad;
-      ctx.beginPath();
-      ctx.moveTo(hx, hy);
-      ctx.lineTo(ex, ey);
-      ctx.stroke();
-    }
-
-    if (keepFrom > 0) t.points.splice(0, keepFrom);
-
-    cumulative = 0;
-    for (let i = path.length - 1; i > 0; i--) {
-      cumulative += Math.abs(path[i][0] - path[i - 1][0]) + Math.abs(path[i][1] - path[i - 1][1]);
-      if (cumulative >= tailEnd) break;
-      const a = base * tailAlphaAt(cumulative, tailFull, tailEnd);
-      if (a < 0.02 || i - 1 === 0) continue;
-      ctx.fillStyle = `rgba(${SILVER}, ${a})`;
-      ctx.beginPath();
-      ctx.arc(path[i - 1][0], path[i - 1][1], 2.4, 0, Math.PI * 2);
-      ctx.fill();
-    }
-
-    const headAlpha = base * (tailEnd / (TAIL_FULL + TAIL_FADE));
-    if (headAlpha > 0.02) {
-      ctx.save();
-      ctx.shadowColor = `rgba(${SILVER}, ${Math.min(1, headAlpha * 1.4)})`;
-      ctx.shadowBlur = 10;
-      ctx.fillStyle = `rgba(255, 255, 255, ${Math.min(1, headAlpha * 1.2)})`;
-      ctx.beginPath();
-      ctx.arc(t.x, t.y, 2.2, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.restore();
-    }
-  }
-
-  function draw() {
-    if (!ctx) return;
-    if (paused) { frame = null; return; }
-
-    ctx.clearRect(0, 0, width, height);
-    ctx.lineCap = "butt";
-    ctx.lineJoin = "miter";
-
-    for (let i = 0; i < traces.length; i++) {
-      drawTrace(traces[i]);
-      if (!step(traces[i])) {
-        traces[i] = newTrace();
-        traces[i].life = -rand(0, 160);
-      }
-    }
-    frame = requestAnimationFrame(draw);
-  }
-
-  function resume() {
-    if (frame === null && ctx && !paused) frame = requestAnimationFrame(draw);
-  }
-
-  function seed() {
-    traces = [];
-    for (let i = 0; i < TRACES; i++) {
-      const t = newTrace();
-      const steps = Math.floor(rand(0, (width / SPEED) * 0.9));
-      for (let s = 0; s < steps && !exited(t); s++) advance(t);
-      if (exited(t)) { i--; continue; }
-      traces.push(t);
-    }
-  }
-
-  function resize() {
-    if (!canvas) return;
-    const rect = canvas.parentElement.getBoundingClientRect();
-    if (rect.width === 0 || rect.height === 0) {
-      requestAnimationFrame(resize);
-      return;
-    }
-    const dpr = Math.min(2, window.devicePixelRatio || 1);
-    width = Math.floor(rect.width);
-    height = Math.floor(rect.height);
-    canvas.width = width * dpr;
-    canvas.height = height * dpr;
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    seed();
-  }
-
-  function onVisibility() {
-    paused = document.hidden;
-    if (!paused) resume();
-  }
-
-  function stop() {
-    if (frame !== null) cancelAnimationFrame(frame);
-    frame = null;
-    window.removeEventListener("resize", resize);
-    document.removeEventListener("visibilitychange", onVisibility);
-    if (visibilityObserver) { visibilityObserver.disconnect(); visibilityObserver = null; }
-    canvas = ctx = null;
-    traces = [];
-    paused = false;
-  }
-
-  function start() {
-    stop();
-    canvas = document.getElementById("ingot-traces");
-    if (!canvas) return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-
-    ctx = canvas.getContext("2d");
-    window.addEventListener("resize", resize);
-    document.addEventListener("visibilitychange", onVisibility);
-
-    // Pause when the hero is fully scrolled out from under the sheet.
-    if ("IntersectionObserver" in window) {
-      visibilityObserver = new IntersectionObserver(function (entries) {
-        const visible = entries[0] && entries[0].isIntersecting;
-        paused = document.hidden || !visible;
-        if (!paused) resume();
-      }, { threshold: 0.02 });
-      visibilityObserver.observe(canvas.parentElement);
-    }
-
-    resize();
-    draw();
-  }
-
-  if (typeof document$ !== "undefined" && document$.subscribe) {
-    document$.subscribe(start);
-  } else if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", start);
-  } else {
-    start();
-  }
-})();
-zensical.toml
-toml
-[project]
-extra_css = ["stylesheets/ingot.css", "stylesheets/landing.css"]
-extra_javascript = ["javascripts/traces.js", "javascripts/landing.js"]
-What to fill in
-
-The roadmap items reflect what we've discussed; adjust is-done and is-active as things land. The tools strip should list what's actually integrated — drop anything that isn't yet, or it reads as a claim. The terminal and step 2/3 outputs are illustrative until the exemplar produces real numbers.
-
-The nav links to reference/cli/ and contributing/, which need to exist or the validation warns. Stub them if they don't.
-
-One thing to check after the first render: the sticky hero plus the negative-margin sheet means the sheet's rounded top should overlap the hero's bottom edge as you scroll. If there's a visible gap or the hero scrolls away normally, an ancestor has overflow set — DevTools on .md-tabs and .md-container will show which.
+One thing worth deciding: the footer still says "Silicon design and verification platform." With the broadened scope, "Silicon development platform for circuitware" is the more accurate line, and it matches the hero pill.

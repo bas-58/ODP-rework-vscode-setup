@@ -1,221 +1,20 @@
-overrides/home.html
-html
-{% extends "base.html" %}
+Three changes, and the sticky-hero is the one that produces the effect you're describing — the next section slides over the pinned hero while the canvas keeps animating behind it.
 
-{% block styles %}
-{{ super() }}
-<style>
-  .md-header { display: none; }
-  .md-tabs { height: auto; overflow: visible; background: none; }
-  .md-tabs__inner { display: none; }
-  .md-container { padding-top: 0; }
-  .md-main { display: none; }
-</style>
-{% endblock %}
-
-{% block tabs %}
-<div class="ingot-landing">
-
-  <!-- ============================================================ -->
-  <section class="ingot-hero">
-    <canvas id="ingot-traces" aria-hidden="true"></canvas>
-    <div class="ingot-hero__gradient" aria-hidden="true"></div>
-
-    <div class="ingot-container ingot-hero__content">
-      <a class="ingot-lockup" href="{{ 'start/first-block/' | url }}">
-        <img src="{{ 'assets/logo.svg' | url }}" alt="">
-        <span>Ingot</span>
-      </a>
-
-      <h1 class="ingot-hero__headline">
-        One command from source<br>to reproducible simulation.
-      </h1>
-
-      <p class="ingot-hero__lede">
-        Ingot wraps VCS in a CLI that manages compiled libraries, shares
-        analysis across build profiles, and prints the exact command to
-        reproduce any failure. Convention over configuration, incremental
-        by default.
-      </p>
-
-      <div class="ingot-hero__actions">
-        <a href="{{ 'start/first-block/' | url }}" class="ingot-btn ingot-btn--primary">
-          Get started
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-        </a>
-        <a href="{{ 'concepts/philosophy/' | url }}" class="ingot-btn ingot-btn--ghost">
-          Why Ingot
-        </a>
-      </div>
-    </div>
-
-    <div class="ingot-hero__scroll" aria-hidden="true">
-      <svg viewBox="0 0 24 24"><path d="M12 5v14M6 13l6 6 6-6"/></svg>
-    </div>
-  </section>
-
-  <!-- ============================================================ -->
-  <section class="ingot-section ingot-section--features" data-reveal>
-    <div class="ingot-container">
-      <p class="ingot-eyebrow">What it does</p>
-      <h2 class="ingot-section__title">The parts of the flow that were always manual.</h2>
-
-      <div class="ingot-grid">
-
-        <article class="ingot-card">
-          <div class="ingot-card__icon">
-            <svg viewBox="0 0 24 24"><path d="M12 2 2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
-          </div>
-          <h3>Build profiles</h3>
-          <p>Fast for regressions, debug for Verdi, coverage for closure.
-             Switching costs one elaboration — analysis is shared.</p>
-          <a href="{{ 'concepts/profiles/' | url }}">How profiles work</a>
-        </article>
-
-        <article class="ingot-card">
-          <div class="ingot-card__icon">
-            <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-          </div>
-          <h3>Per-unit libraries</h3>
-          <p>Every block and library compiles once into its own VCS
-             library. Change one unit; only that unit re-analyzes.</p>
-          <a href="{{ 'concepts/units-and-libraries/' | url }}">The methodology</a>
-        </article>
-
-        <article class="ingot-card">
-          <div class="ingot-card__icon">
-            <svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v6h-6"/></svg>
-          </div>
-          <h3>Reproducible failures</h3>
-          <p>Every run records its seed. Every failure prints the command
-             to reproduce it, and the one to open it in a debugger.</p>
-          <a href="{{ 'guides/debug-a-failure/' | url }}">Debug a failure</a>
-        </article>
-
-        <article class="ingot-card">
-          <div class="ingot-card__icon">
-            <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h10M4 18h6"/></svg>
-          </div>
-          <h3>Convention over configuration</h3>
-          <p>A block is four lines of TOML. Sources are discovered, order
-             is derived, include paths are found. Override only what differs.</p>
-          <a href="{{ 'reference/manifest/' | url }}">Manifest reference</a>
-        </article>
-
-      </div>
-    </div>
-  </section>
-
-  <!-- ============================================================ -->
-  <section class="ingot-section ingot-section--terminal" data-reveal>
-    <div class="ingot-container ingot-split">
-      <div class="ingot-split__text">
-        <p class="ingot-eyebrow">The loop</p>
-        <h2 class="ingot-section__title">Three commands. One binary. Zero re-analysis.</h2>
-        <p>Build once. Simulate as many times as you like against the same
-           artifact. When something fails, switch to the debug profile —
-           the analysis is already done, so you pay for one elaboration
-           and nothing else.</p>
-        <a href="{{ 'guides/build-and-simulate/' | url }}" class="ingot-link">Build and simulate</a>
-      </div>
-
-      <div class="ingot-terminal">
-        <div class="ingot-terminal__bar">
-          <span></span><span></span><span></span>
-          <em>bash</em>
-        </div>
-<pre class="ingot-terminal__body"><span class="p">$</span> ingot build exemplar
-  vlogan analyze    <span class="t">2.10s</span>  ok
-  vcs elaborate    <span class="t">41.30s</span>  ok
-<span class="ok">exemplar [fast]: build/exemplar/fast/simv</span>
-
-<span class="p">$</span> ingot sim exemplar -t smoke
-<span class="ok">PASS</span>  exemplar/smoke  seed=1847362  4.2s
-
-<span class="p">$</span> ingot sim exemplar -t smoke -s 1847362 -p debug --waves
-  vcs elaborate    <span class="t">58.02s</span>  ok   <span class="c">← analysis reused</span>
-<span class="ok">PASS</span>  exemplar/smoke  seed=1847362  6.1s</pre>
-      </div>
-    </div>
-  </section>
-
-  <!-- ============================================================ -->
-  <section class="ingot-section ingot-section--stats" data-reveal>
-    <div class="ingot-container ingot-stats">
-      <div class="ingot-stat">
-        <strong>1×</strong>
-        <span>analysis per unit, shared by every consumer</span>
-      </div>
-      <div class="ingot-stat">
-        <strong>4 lines</strong>
-        <span>of TOML to define a block</span>
-      </div>
-      <div class="ingot-stat">
-        <strong>100%</strong>
-        <span>of failures print a reproduce command</span>
-      </div>
-    </div>
-  </section>
-
-  <!-- ============================================================ -->
-  <section class="ingot-section ingot-section--cta" data-reveal>
-    <div class="ingot-container ingot-cta">
-      <h2>Start with your first block.</h2>
-      <p>Ten minutes from clone to a passing regression.</p>
-      <a href="{{ 'start/first-block/' | url }}" class="ingot-btn ingot-btn--primary">
-        Read the tutorial
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-      </a>
-    </div>
-  </section>
-
-</div>
-{% endblock %}
-
-{% block content %}{% endblock %}
-docs/stylesheets/landing.css
-
-Separate file — the landing page has enough CSS to warrant its own. Add to extra_css.
-
+CSS — replace the hero block and add the section overlap
 css
-/* =========================================================================
-   Ingot landing page
-   ========================================================================= */
-
-.ingot-landing {
-  --ingot-ink:       #0F1114;
-  --ingot-ink-2:     #16191D;
-  --ingot-steel:     #2E3338;
-  --ingot-silver:    #C8D0D8;
-  --ingot-silver-2:  #9AA5B1;
-  --ingot-text:      #E6EAEE;
-  --ingot-muted:     #8C96A0;
-  --ingot-accent:    #D4DCE4;
-  --ingot-ok:        #6FCF97;
-
-  --ingot-ease:      cubic-bezier(0.22, 1, 0.36, 1);
-
-  font-family: -apple-system, "Segoe UI", Inter, Roboto, "Helvetica Neue", sans-serif;
-  color: var(--ingot-text);
-  background: var(--ingot-ink);
-  -webkit-font-smoothing: antialiased;
-}
-
-.ingot-container {
-  max-width: 68rem;
-  margin: 0 auto;
-  padding: 0 2rem;
-}
-
 /* ---- Hero ------------------------------------------------------------- */
 
 .ingot-hero {
-  position: relative;
-  min-height: 88vh;
+  position: sticky;
+  top: 0;
+  z-index: 0;
+  min-height: 100vh;
   display: flex;
   align-items: center;
   overflow: hidden;
-  background: var(--ingot-ink);
+  background:
+    radial-gradient(circle, rgba(200, 208, 216, 0.07) 1px, transparent 1.5px) 0 0 / 24px 24px,
+    var(--ingot-ink);
 }
 
 #ingot-traces {
@@ -224,17 +23,19 @@ css
   left: 0;
   width: 100%;
   height: 100%;
-  opacity: 0.55;
-  will-change: transform;
+  opacity: 0.7;
+  will-change: transform, opacity;
+  transform-origin: 50% 50%;
 }
 
 .ingot-hero__gradient {
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(ellipse 60% 80% at 20% 50%, rgba(15, 17, 20, 0.92) 0%, rgba(15, 17, 20, 0.4) 60%, transparent 100%),
-    linear-gradient(180deg, transparent 70%, var(--ingot-ink) 100%);
+    radial-gradient(ellipse 45% 70% at 22% 50%, rgba(15, 17, 20, 0.85) 0%, rgba(15, 17, 20, 0.35) 55%, transparent 100%),
+    linear-gradient(180deg, transparent 75%, var(--ingot-ink) 100%);
   pointer-events: none;
+  will-change: opacity;
 }
 
 .ingot-hero__content {
@@ -244,497 +45,325 @@ css
   padding-bottom: 6rem;
   max-width: 48rem;
   animation: ingot-rise 0.9s var(--ingot-ease) both;
+  will-change: transform, opacity;
 }
 
-.ingot-lockup {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.6rem;
-  margin-bottom: 2.5rem;
-  color: var(--ingot-silver);
-  text-decoration: none;
-  font-size: 0.85rem;
-  font-weight: 600;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-}
-
-.ingot-lockup img {
-  height: 1.75rem;
-  width: auto;
-}
-
-.ingot-hero__headline {
-  font-size: clamp(2.2rem, 5vw, 3.4rem);
-  font-weight: 500;
-  line-height: 1.1;
-  letter-spacing: -0.02em;
-  margin: 0 0 1.5rem;
-  color: #fff;
-}
-
-.ingot-hero__lede {
-  font-size: 1.1rem;
-  line-height: 1.65;
-  color: var(--ingot-muted);
-  max-width: 36rem;
-  margin: 0 0 2.5rem;
-}
-
-.ingot-hero__actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-}
-
-.ingot-hero__scroll {
-  position: absolute;
-  left: 50%;
-  bottom: 2rem;
-  transform: translateX(-50%);
-  width: 1.5rem;
-  height: 1.5rem;
-  color: var(--ingot-muted);
-  opacity: 0.6;
-  animation: ingot-bob 2.2s ease-in-out infinite;
-}
-
-.ingot-hero__scroll svg {
-  width: 100%;
-  height: 100%;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.5;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-/* ---- Buttons ---------------------------------------------------------- */
-
-.ingot-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.85rem 1.5rem;
-  border-radius: 0.375rem;
-  font-size: 0.95rem;
-  font-weight: 600;
-  letter-spacing: 0.01em;
-  text-decoration: none;
-  border: 1px solid transparent;
-  transition: transform 0.25s var(--ingot-ease),
-              box-shadow 0.25s var(--ingot-ease),
-              background 0.2s, border-color 0.2s;
-}
-
-.ingot-btn svg {
-  width: 1.1rem;
-  height: 1.1rem;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  transition: transform 0.25s var(--ingot-ease);
-}
-
-.ingot-btn--primary {
-  background: var(--ingot-silver);
-  color: var(--ingot-ink);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px -8px rgba(200, 208, 216, 0.35);
-}
-
-.ingot-btn--primary:hover {
-  background: #fff;
-  transform: translateY(-2px);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3), 0 14px 32px -8px rgba(200, 208, 216, 0.45);
-}
-
-.ingot-btn--primary:hover svg {
-  transform: translateX(3px);
-}
-
-.ingot-btn--ghost {
-  background: transparent;
-  color: var(--ingot-text);
-  border-color: rgba(200, 208, 216, 0.25);
-}
-
-.ingot-btn--ghost:hover {
-  border-color: rgba(200, 208, 216, 0.6);
-  background: rgba(200, 208, 216, 0.05);
-  transform: translateY(-2px);
-}
-
-/* ---- Sections --------------------------------------------------------- */
-
+/* Sections slide over the pinned hero */
 .ingot-section {
+  position: relative;
+  z-index: 1;
   padding: 6rem 0;
 }
 
 .ingot-section--features {
   background: var(--ingot-ink-2);
+  margin-top: -2.5rem;
+  border-radius: 1.5rem 1.5rem 0 0;
+  box-shadow: 0 -24px 48px -24px rgba(0, 0, 0, 0.8);
 }
 
-.ingot-section--terminal {
-  background: var(--ingot-ink);
-}
+The dot grid on the hero background is the substrate the traces route across — same 24px pitch as GRID. The first section's negative margin, rounded top, and upward shadow make it read as a card sliding up over the hero.
 
-.ingot-section--stats {
-  background: var(--ingot-steel);
-  padding: 3.5rem 0;
-}
+Add to the reduced-motion block:
 
-.ingot-section--cta {
-  background: var(--ingot-ink-2);
-  padding: 7rem 0;
-}
+css
+  .ingot-hero { position: relative; }
 
-.ingot-eyebrow {
-  font-size: 0.72rem;
-  font-weight: 600;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--ingot-silver-2);
-  margin: 0 0 0.75rem;
-}
+And to the max-width: 40rem block:
 
-.ingot-section__title {
-  font-size: clamp(1.6rem, 3vw, 2.2rem);
-  font-weight: 500;
-  line-height: 1.2;
-  letter-spacing: -0.015em;
-  margin: 0 0 3rem;
-  color: #fff;
-  max-width: 34rem;
-}
+css
+  .ingot-hero { min-height: 100svh; }
 
-/* ---- Feature cards ---------------------------------------------------- */
+svh accounts for mobile browser chrome; 100vh overshoots on phones.
 
-.ingot-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
-  gap: 1.25rem;
-}
+traces.js — full rewrite
 
-.ingot-card {
-  position: relative;
-  padding: 1.75rem;
-  border-radius: 0.5rem;
-  background: linear-gradient(160deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.01));
-  border: 1px solid rgba(200, 208, 216, 0.1);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 12px 32px -16px rgba(0, 0, 0, 0.6);
-  transition: transform 0.35s var(--ingot-ease),
-              box-shadow 0.35s var(--ingot-ease),
-              border-color 0.35s;
-}
-
-.ingot-card:hover {
-  transform: translateY(-4px);
-  border-color: rgba(200, 208, 216, 0.28);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4), 0 24px 48px -16px rgba(0, 0, 0, 0.7);
-}
-
-.ingot-card__icon {
-  width: 2.5rem;
-  height: 2.5rem;
-  margin-bottom: 1.25rem;
-  padding: 0.55rem;
-  border-radius: 0.375rem;
-  background: rgba(200, 208, 216, 0.08);
-  color: var(--ingot-silver);
-}
-
-.ingot-card__icon svg {
-  width: 100%;
-  height: 100%;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.6;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-.ingot-card h3 {
-  font-size: 1.05rem;
-  font-weight: 600;
-  margin: 0 0 0.6rem;
-  color: #fff;
-}
-
-.ingot-card p {
-  font-size: 0.9rem;
-  line-height: 1.6;
-  color: var(--ingot-muted);
-  margin: 0 0 1.25rem;
-}
-
-.ingot-card a,
-.ingot-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--ingot-silver);
-  text-decoration: none;
-}
-
-.ingot-card a::after,
-.ingot-link::after {
-  content: "→";
-  transition: transform 0.25s var(--ingot-ease);
-}
-
-.ingot-card a:hover::after,
-.ingot-link:hover::after {
-  transform: translateX(3px);
-}
-
-/* ---- Split + terminal ------------------------------------------------- */
-
-.ingot-split {
-  display: grid;
-  grid-template-columns: 1fr 1.2fr;
-  gap: 4rem;
-  align-items: center;
-}
-
-.ingot-split__text .ingot-section__title {
-  margin-bottom: 1.25rem;
-}
-
-.ingot-split__text p:not(.ingot-eyebrow) {
-  font-size: 1rem;
-  line-height: 1.65;
-  color: var(--ingot-muted);
-  margin: 0 0 1.5rem;
-}
-
-.ingot-terminal {
-  border-radius: 0.6rem;
-  overflow: hidden;
-  background: #0A0C0E;
-  border: 1px solid rgba(200, 208, 216, 0.12);
-  box-shadow:
-    0 1px 2px rgba(0, 0, 0, 0.5),
-    0 24px 64px -20px rgba(0, 0, 0, 0.8),
-    0 0 0 1px rgba(255, 255, 255, 0.02) inset;
-  transform: perspective(1200px) rotateY(-3deg) rotateX(1deg);
-  transition: transform 0.6s var(--ingot-ease);
-}
-
-.ingot-terminal:hover {
-  transform: perspective(1200px) rotateY(0) rotateX(0);
-}
-
-.ingot-terminal__bar {
-  display: flex;
-  align-items: center;
-  gap: 0.45rem;
-  padding: 0.7rem 1rem;
-  background: rgba(255, 255, 255, 0.03);
-  border-bottom: 1px solid rgba(200, 208, 216, 0.08);
-}
-
-.ingot-terminal__bar span {
-  width: 0.7rem;
-  height: 0.7rem;
-  border-radius: 50%;
-  background: rgba(200, 208, 216, 0.15);
-}
-
-.ingot-terminal__bar em {
-  margin-left: auto;
-  font-style: normal;
-  font-size: 0.7rem;
-  color: var(--ingot-muted);
-  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-}
-
-.ingot-terminal__body {
-  margin: 0;
-  padding: 1.25rem 1.5rem 1.5rem;
-  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 0.8rem;
-  line-height: 1.7;
-  color: var(--ingot-text);
-  background: transparent;
-  overflow-x: auto;
-}
-
-.ingot-terminal__body .p  { color: var(--ingot-silver-2); }
-.ingot-terminal__body .t  { color: var(--ingot-silver); }
-.ingot-terminal__body .ok { color: var(--ingot-ok); }
-.ingot-terminal__body .c  { color: var(--ingot-muted); font-style: italic; }
-
-/* ---- Stats ------------------------------------------------------------ */
-
-.ingot-stats {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 2rem;
-}
-
-.ingot-stat {
-  text-align: center;
-  padding: 0 1rem;
-}
-
-.ingot-stat + .ingot-stat {
-  border-left: 1px solid rgba(200, 208, 216, 0.12);
-}
-
-.ingot-stat strong {
-  display: block;
-  font-size: 2.4rem;
-  font-weight: 500;
-  letter-spacing: -0.02em;
-  color: #fff;
-  line-height: 1;
-  margin-bottom: 0.6rem;
-}
-
-.ingot-stat span {
-  font-size: 0.85rem;
-  color: var(--ingot-silver-2);
-  line-height: 1.4;
-}
-
-/* ---- CTA -------------------------------------------------------------- */
-
-.ingot-cta {
-  text-align: center;
-  max-width: 36rem;
-}
-
-.ingot-cta h2 {
-  font-size: clamp(1.8rem, 3.5vw, 2.4rem);
-  font-weight: 500;
-  letter-spacing: -0.015em;
-  margin: 0 0 0.75rem;
-  color: #fff;
-}
-
-.ingot-cta p {
-  color: var(--ingot-muted);
-  margin: 0 0 2rem;
-}
-
-/* ---- Reveal on scroll ------------------------------------------------- */
-
-[data-reveal] {
-  opacity: 0;
-  transform: translateY(28px);
-  transition: opacity 0.8s var(--ingot-ease), transform 0.8s var(--ingot-ease);
-}
-
-[data-reveal].is-visible {
-  opacity: 1;
-  transform: none;
-}
-
-/* ---- Motion ----------------------------------------------------------- */
-
-@keyframes ingot-rise {
-  from { opacity: 0; transform: translateY(20px); }
-  to   { opacity: 1; transform: none; }
-}
-
-@keyframes ingot-bob {
-  0%, 100% { transform: translate(-50%, 0); }
-  50%      { transform: translate(-50%, 6px); }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .ingot-hero__content,
-  .ingot-hero__scroll { animation: none; }
-  [data-reveal] { opacity: 1; transform: none; transition: none; }
-  .ingot-terminal { transform: none; }
-  .ingot-card, .ingot-btn { transition: none; }
-}
-
-/* ---- Responsive ------------------------------------------------------- */
-
-@media (max-width: 60rem) {
-  .ingot-split {
-    grid-template-columns: 1fr;
-    gap: 2.5rem;
-  }
-  .ingot-terminal {
-    transform: none;
-  }
-}
-
-@media (max-width: 40rem) {
-  .ingot-container { padding: 0 1.25rem; }
-  .ingot-hero { min-height: 80vh; }
-  .ingot-hero__content { padding-top: 3rem; padding-bottom: 5rem; }
-  .ingot-section { padding: 4rem 0; }
-  .ingot-stats { grid-template-columns: 1fr; gap: 1.5rem; }
-  .ingot-stat + .ingot-stat {
-    border-left: none;
-    border-top: 1px solid rgba(200, 208, 216, 0.12);
-    padding-top: 1.5rem;
-  }
-  .ingot-terminal__body { font-size: 0.72rem; }
-}
-docs/javascripts/landing.js
-
-Parallax and scroll-reveal. Add to extra_javascript alongside traces.js.
+Traces now persist their heading and cross the whole canvas, fade cleanly to zero rather than popping, and carry a glowing head.
 
 javascript
 /**
- * Landing page motion: parallax on the hero canvas, reveal-on-scroll for
- * sections. Both respect prefers-reduced-motion.
+ * Generative background for the Ingot landing page.
+ *
+ * Manhattan-routed traces cross the canvas end to end — horizontal runs
+ * with vertical jogs, a via at each turn, and a glowing head. Each trace
+ * fades out by life and by proximity to its exit edge, so nothing pops.
  */
 
 (function () {
   "use strict";
 
-  function init() {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      document.querySelectorAll("[data-reveal]").forEach(function (el) {
-        el.classList.add("is-visible");
-      });
-      return;
+  const GRID = 24;
+  const TRACES = 32;
+  const SPEED = 2.0;
+  const SILVER = "200, 208, 216";
+  const EDGE_FADE = 220;
+
+  let canvas = null;
+  let ctx = null;
+  let width = 0;
+  let height = 0;
+  let traces = [];
+  let frame = null;
+
+  function snap(value) {
+    return Math.round(value / GRID) * GRID;
+  }
+
+  function rand(min, max) {
+    return min + Math.random() * (max - min);
+  }
+
+  function newTrace() {
+    const fromLeft = Math.random() < 0.5;
+    const dir = fromLeft ? 1 : -1;
+    const x = fromLeft ? -GRID : width + GRID;
+    const y = snap(rand(GRID * 2, height - GRID * 2));
+    return {
+      x: x,
+      y: y,
+      dx: dir,
+      dy: 0,
+      dir: dir,
+      points: [[x, y]],
+      life: 0,
+      maxLife: rand(1100, 1900),
+      turnIn: rand(160, 420),
+      width: Math.random() < 0.2 ? 2 : 1.2,
+    };
+  }
+
+  function turn(trace) {
+    trace.x = snap(trace.x);
+    trace.y = snap(trace.y);
+    trace.points.push([trace.x, trace.y]);
+
+    if (trace.dy === 0) {
+      // Horizontal → vertical. Bias away from the nearest edge.
+      const room = height - trace.y;
+      const goDown = trace.y < GRID * 4 ? true
+                   : room < GRID * 4 ? false
+                   : Math.random() < 0.5;
+      trace.dy = goDown ? 1 : -1;
+      trace.dx = 0;
+      trace.turnIn = rand(48, 168);
+    } else {
+      // Vertical → resume original heading.
+      trace.dx = trace.dir;
+      trace.dy = 0;
+      trace.turnIn = rand(160, 420);
+    }
+  }
+
+  function step(trace) {
+    trace.life += SPEED;
+    trace.turnIn -= SPEED;
+    if (trace.turnIn <= 0) turn(trace);
+
+    trace.x += trace.dx * SPEED;
+    trace.y += trace.dy * SPEED;
+
+    // Never run off the top or bottom — reflect instead.
+    if (trace.dy !== 0 && (trace.y < GRID || trace.y > height - GRID)) {
+      trace.dy = -trace.dy;
     }
 
+    const exited = trace.dir > 0 ? trace.x > width + GRID * 2
+                                 : trace.x < -GRID * 2;
+    return trace.life < trace.maxLife && !exited;
+  }
+
+  function alphaFor(trace) {
+    const fadeIn = Math.min(1, trace.life / 18);
+    const t = trace.life / trace.maxLife;
+    const fadeOut = 1 - t * t * t * t;
+    const toEdge = trace.dir > 0 ? width - trace.x : trace.x;
+    const edge = Math.max(0, Math.min(1, toEdge / EDGE_FADE));
+    return 0.9 * fadeIn * fadeOut * edge;
+  }
+
+  function drawTrace(trace) {
+    const alpha = alphaFor(trace);
+    if (alpha <= 0.005) return;
+
+    const color = "rgba(" + SILVER + ", " + alpha + ")";
+
+    ctx.strokeStyle = color;
+    ctx.lineWidth = trace.width;
+    ctx.beginPath();
+    ctx.moveTo(trace.points[0][0], trace.points[0][1]);
+    for (let i = 1; i < trace.points.length; i++) {
+      ctx.lineTo(trace.points[i][0], trace.points[i][1]);
+    }
+    ctx.lineTo(trace.x, trace.y);
+    ctx.stroke();
+
+    ctx.fillStyle = color;
+    for (let i = 1; i < trace.points.length; i++) {
+      ctx.beginPath();
+      ctx.arc(trace.points[i][0], trace.points[i][1], 2.4, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Head glow.
+    ctx.save();
+    ctx.shadowColor = "rgba(" + SILVER + ", " + Math.min(1, alpha * 1.4) + ")";
+    ctx.shadowBlur = 10;
+    ctx.fillStyle = "rgba(255, 255, 255, " + Math.min(1, alpha * 1.2) + ")";
+    ctx.beginPath();
+    ctx.arc(trace.x, trace.y, 2.2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function draw() {
+    if (!ctx) return;
+    ctx.clearRect(0, 0, width, height);
+    ctx.lineCap = "square";
+    ctx.lineJoin = "miter";
+
+    for (let i = 0; i < traces.length; i++) {
+      drawTrace(traces[i]);
+      if (!step(traces[i])) {
+        traces[i] = newTrace();
+        // Stagger re-entry so replacements don't all appear at once.
+        traces[i].life = -rand(0, 120);
+      }
+    }
+    frame = requestAnimationFrame(draw);
+  }
+
+  function resize() {
+    if (!canvas) return;
+    const rect = canvas.parentElement.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) {
+      requestAnimationFrame(resize);
+      return;
+    }
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    width = Math.floor(rect.width);
+    height = Math.floor(rect.height);
+    canvas.width = width * dpr;
+    canvas.height = height * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    traces = [];
+    for (let i = 0; i < TRACES; i++) {
+      const t = newTrace();
+      // Spread initial traces across the canvas so it's populated on load.
+      t.x = rand(-GRID, width + GRID);
+      t.points = [[t.x, t.y]];
+      t.life = rand(0, t.maxLife * 0.6);
+      traces.push(t);
+    }
+  }
+
+  function stop() {
+    if (frame !== null) {
+      cancelAnimationFrame(frame);
+      frame = null;
+    }
+    window.removeEventListener("resize", resize);
+    canvas = null;
+    ctx = null;
+    traces = [];
+  }
+
+  function start() {
+    stop();
+    canvas = document.getElementById("ingot-traces");
+    if (!canvas) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    ctx = canvas.getContext("2d");
+    window.addEventListener("resize", resize);
+    resize();
+    draw();
+  }
+
+  if (typeof document$ !== "undefined" && document$.subscribe) {
+    document$.subscribe(start);
+  } else if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", start);
+  } else {
+    start();
+  }
+})();
+
+What changed and why:
+
+dir persists — after a vertical jog, the trace resumes its original heading, so it actually crosses the screen instead of wandering back
+Quartic fade-out — flat for most of life, then a quick clean drop to zero; nothing pops
+Edge fade — traces dim as they approach their exit edge, so leaving the screen is a fade, not a cut
+Reflection at top and bottom — no traces lost off the vertical edges
+Initial population — traces are seeded across the canvas at random life stages, so the page loads already routed rather than empty for two seconds
+Staggered replacement — a negative initial life delays re-entry
+Head glow — a bright dot with shadow at each trace's leading edge
+DPR-aware — crisp on high-DPI displays
+20% of traces are heavier — visual hierarchy, like power rails among signal lines
+landing.js — parallax against the pinned hero
+
+With the hero sticky, the effect is inverted: content drifts up faster than the pinned background, the canvas scales gently, and the gradient deepens as the next section covers it.
+
+javascript
+(function () {
+  "use strict";
+
+  function init() {
+    var reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
     // ---- Reveal ---------------------------------------------------------
-    var observer = new IntersectionObserver(
-      function (entries) {
+    var targets = document.querySelectorAll("[data-reveal]");
+    if (reduced || !("IntersectionObserver" in window)) {
+      targets.forEach(function (el) { el.classList.add("is-visible"); });
+    } else {
+      var observer = new IntersectionObserver(function (entries) {
         entries.forEach(function (entry) {
           if (entry.isIntersecting) {
             entry.target.classList.add("is-visible");
             observer.unobserve(entry.target);
           }
         });
-      },
-      { threshold: 0.15, rootMargin: "0px 0px -60px 0px" }
-    );
-    document.querySelectorAll("[data-reveal]").forEach(function (el) {
-      observer.observe(el);
-    });
+      }, { threshold: 0.12, rootMargin: "0px 0px -80px 0px" });
+      targets.forEach(function (el) { observer.observe(el); });
+    }
 
-    // ---- Parallax -------------------------------------------------------
+    if (reduced) return;
+
+    // ---- Hero parallax --------------------------------------------------
+    var hero = document.querySelector(".ingot-hero");
     var canvas = document.getElementById("ingot-traces");
-    var hero = canvas ? canvas.closest(".ingot-hero") : null;
-    if (!canvas || !hero) return;
+    var content = document.querySelector(".ingot-hero__content");
+    var gradient = document.querySelector(".ingot-hero__gradient");
+    if (!hero || !canvas || !content) return;
 
     var ticking = false;
-    function onScroll() {
-      if (ticking) return;
-      ticking = true;
-      requestAnimationFrame(function () {
-        var heroHeight = hero.offsetHeight;
-        var y = window.scrollY;
-        if (y < heroHeight) {
-          canvas.style.transform = "translateY(" + y * 0.35 + "px)";
-        }
-        ticking = false;
-      });
+
+    function update() {
+      var heroHeight = hero.offsetHeight;
+      var y = Math.max(0, window.scrollY);
+      var progress = Math.min(1, y / heroHeight);
+
+      // Content lifts away faster than the pinned background, and fades.
+      content.style.transform = "translateY(" + (-y * 0.28) + "px)";
+      content.style.opacity = String(1 - progress * 1.4);
+
+      // Background recedes: slight scale, darkening.
+      canvas.style.transform = "scale(" + (1 + progress * 0.08) + ")";
+      canvas.style.opacity = String(0.7 * (1 - progress * 0.6));
+      if (gradient) {
+        gradient.style.opacity = String(1 + progress * 0.8);
+      }
+      ticking = false;
     }
-    window.addEventListener("scroll", onScroll, { passive: true });
+
+    window.addEventListener("scroll", function () {
+      if (!ticking) {
+        ticking = true;
+        requestAnimationFrame(update);
+      }
+    }, { passive: true });
+
+    update();
   }
 
   if (typeof document$ !== "undefined" && document$.subscribe) {
@@ -745,18 +374,8 @@ javascript
     init();
   }
 })();
-zensical.toml
-toml
-extra_css = ["stylesheets/ingot.css", "stylesheets/landing.css"]
-extra_javascript = ["javascripts/traces.js", "javascripts/landing.js"]
-In traces.js, one tuning change
+One thing to verify
 
-The gradient overlay now darkens the left side where the text sits, so the traces can be brighter without competing with copy. In drawTrace, raise the alpha floor:
+Sticky positioning breaks if any ancestor has overflow: hidden or overflow: auto. You've already set .md-tabs to overflow: visible; check .ingot-landing and .md-container in DevTools too. If the hero scrolls away normally instead of staying pinned, that's the cause — find the ancestor with the overflow rule and override it in the template's <style> block.
 
-javascript
-    const alpha = 0.35 + 0.65 * fadeIn * fadeOut;
-What to replace before shipping
-
-The terminal output and the three stats are illustrative. Once the exemplar produces real numbers, paste them in — a landing page whose demo doesn't match what someone sees when they run it undermines the whole thing. The stats especially: "1× analysis per unit" is true by construction, but the other two should be things you can point at.
-
-Same rule as everywhere else in your docs. Examples are real or they aren't there.
+If sticky genuinely won't cooperate with Material's layout, dropping position: sticky and z-index: 0 from .ingot-hero falls back to the plain parallax cleanly. Everything else still works.

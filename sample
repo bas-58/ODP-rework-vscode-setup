@@ -1,1080 +1,762 @@
-Complete set. Nine files.
+overrides/home.html
+html
+{% extends "base.html" %}
 
-tools/ingot/manifest/schema.py
-python
-"""Manifest schema for blocks, libraries, profiles, and tests.
+{% block styles %}
+{{ super() }}
+<style>
+  .md-header { display: none; }
+  .md-tabs { height: auto; overflow: visible; background: none; }
+  .md-tabs__inner { display: none; }
+  .md-container { padding-top: 0; }
+  .md-main { display: none; }
+</style>
+{% endblock %}
 
-A unit is defined by an `ingot.toml` at its root carrying either a
-`[block]` or `[library]` section. The project root has an `ingot.toml`
-too, distinguished by `[project]` or `[gitlab]`, and it is where
-`[profiles.*]` live.
+{% block tabs %}
+<div class="ingot-landing">
 
-Libraries have no `top` and no tests: they are exercised by unit tests,
-not testbenches. A design that needs a UVM environment to verify is a
-block, wherever it lives.
-"""
+  <!-- ============================================================ -->
+  <section class="ingot-hero">
+    <canvas id="ingot-traces" aria-hidden="true"></canvas>
+    <div class="ingot-hero__gradient" aria-hidden="true"></div>
 
-from __future__ import annotations
+    <div class="ingot-container ingot-hero__content">
+      <a class="ingot-lockup" href="{{ 'start/first-block/' | url }}">
+        <img src="{{ 'assets/logo.svg' | url }}" alt="">
+        <span>Ingot</span>
+      </a>
 
-from enum import StrEnum
+      <h1 class="ingot-hero__headline">
+        One command from source<br>to reproducible simulation.
+      </h1>
 
-from pydantic import BaseModel, ConfigDict, Field
+      <p class="ingot-hero__lede">
+        Ingot wraps VCS in a CLI that manages compiled libraries, shares
+        analysis across build profiles, and prints the exact command to
+        reproduce any failure. Convention over configuration, incremental
+        by default.
+      </p>
 
+      <div class="ingot-hero__actions">
+        <a href="{{ 'start/first-block/' | url }}" class="ingot-btn ingot-btn--primary">
+          Get started
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </a>
+        <a href="{{ 'concepts/philosophy/' | url }}" class="ingot-btn ingot-btn--ghost">
+          Why Ingot
+        </a>
+      </div>
+    </div>
 
-class Language(StrEnum):
-    """Source language, determining which analyzer handles a file."""
+    <div class="ingot-hero__scroll" aria-hidden="true">
+      <svg viewBox="0 0 24 24"><path d="M12 5v14M6 13l6 6 6-6"/></svg>
+    </div>
+  </section>
 
-    SYSTEMVERILOG = "sv"
-    VERILOG = "verilog"
-    VHDL = "vhdl"
+  <!-- ============================================================ -->
+  <section class="ingot-section ingot-section--features" data-reveal>
+    <div class="ingot-container">
+      <p class="ingot-eyebrow">What it does</p>
+      <h2 class="ingot-section__title">The parts of the flow that were always manual.</h2>
 
-    @classmethod
-    def from_suffix(cls, suffix: str) -> Language | None:
-        return {
-            ".sv": cls.SYSTEMVERILOG,
-            ".svh": cls.SYSTEMVERILOG,
-            ".v": cls.VERILOG,
-            ".vh": cls.VERILOG,
-            ".vhd": cls.VHDL,
-            ".vhdl": cls.VHDL,
-        }.get(suffix.lower())
+      <div class="ingot-grid">
 
+        <article class="ingot-card">
+          <div class="ingot-card__icon">
+            <svg viewBox="0 0 24 24"><path d="M12 2 2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+          </div>
+          <h3>Build profiles</h3>
+          <p>Fast for regressions, debug for Verdi, coverage for closure.
+             Switching costs one elaboration — analysis is shared.</p>
+          <a href="{{ 'concepts/profiles/' | url }}">How profiles work</a>
+        </article>
 
-class ManifestError(Exception):
-    """Raised when a manifest is missing, malformed, or inconsistent."""
+        <article class="ingot-card">
+          <div class="ingot-card__icon">
+            <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+          </div>
+          <h3>Per-unit libraries</h3>
+          <p>Every block and library compiles once into its own VCS
+             library. Change one unit; only that unit re-analyzes.</p>
+          <a href="{{ 'concepts/units-and-libraries/' | url }}">The methodology</a>
+        </article>
 
+        <article class="ingot-card">
+          <div class="ingot-card__icon">
+            <svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v6h-6"/></svg>
+          </div>
+          <h3>Reproducible failures</h3>
+          <p>Every run records its seed. Every failure prints the command
+             to reproduce it, and the one to open it in a debugger.</p>
+          <a href="{{ 'guides/debug-a-failure/' | url }}">Debug a failure</a>
+        </article>
 
-class Strict(BaseModel):
-    """Base model rejecting unknown fields.
+        <article class="ingot-card">
+          <div class="ingot-card__icon">
+            <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h10M4 18h6"/></svg>
+          </div>
+          <h3>Convention over configuration</h3>
+          <p>A block is four lines of TOML. Sources are discovered, order
+             is derived, include paths are found. Override only what differs.</p>
+          <a href="{{ 'reference/manifest/' | url }}">Manifest reference</a>
+        </article>
 
-    A typo in a manifest key must be an error. Silently ignoring an
-    unrecognized field produces configuration that appears to work and
-    does not.
-    """
+      </div>
+    </div>
+  </section>
 
-    model_config = ConfigDict(extra="forbid")
+  <!-- ============================================================ -->
+  <section class="ingot-section ingot-section--terminal" data-reveal>
+    <div class="ingot-container ingot-split">
+      <div class="ingot-split__text">
+        <p class="ingot-eyebrow">The loop</p>
+        <h2 class="ingot-section__title">Three commands. One binary. Zero re-analysis.</h2>
+        <p>Build once. Simulate as many times as you like against the same
+           artifact. When something fails, switch to the debug profile —
+           the analysis is already done, so you pay for one elaboration
+           and nothing else.</p>
+        <a href="{{ 'guides/build-and-simulate/' | url }}" class="ingot-link">Build and simulate</a>
+      </div>
 
+      <div class="ingot-terminal">
+        <div class="ingot-terminal__bar">
+          <span></span><span></span><span></span>
+          <em>bash</em>
+        </div>
+<pre class="ingot-terminal__body"><span class="p">$</span> ingot build exemplar
+  vlogan analyze    <span class="t">2.10s</span>  ok
+  vcs elaborate    <span class="t">41.30s</span>  ok
+<span class="ok">exemplar [fast]: build/exemplar/fast/simv</span>
 
-class SourcesConfig(Strict):
-    """Overrides for source discovery."""
+<span class="p">$</span> ingot sim exemplar -t smoke
+<span class="ok">PASS</span>  exemplar/smoke  seed=1847362  4.2s
 
-    include: list[str] = Field(default_factory=list)
-    exclude: list[str] = Field(default_factory=list)
-    order: list[str] = Field(default_factory=list)
-    incdirs: list[str] = Field(default_factory=list)
-    compile: list[str] = Field(default_factory=list)
-    library: str = "work"
+<span class="p">$</span> ingot sim exemplar -t smoke -s 1847362 -p debug --waves
+  vcs elaborate    <span class="t">58.02s</span>  ok   <span class="c">← analysis reused</span>
+<span class="ok">PASS</span>  exemplar/smoke  seed=1847362  6.1s</pre>
+      </div>
+    </div>
+  </section>
 
+  <!-- ============================================================ -->
+  <section class="ingot-section ingot-section--stats" data-reveal>
+    <div class="ingot-container ingot-stats">
+      <div class="ingot-stat">
+        <strong>1×</strong>
+        <span>analysis per unit, shared by every consumer</span>
+      </div>
+      <div class="ingot-stat">
+        <strong>4 lines</strong>
+        <span>of TOML to define a block</span>
+      </div>
+      <div class="ingot-stat">
+        <strong>100%</strong>
+        <span>of failures print a reproduce command</span>
+      </div>
+    </div>
+  </section>
 
-class BlockConfig(Strict):
-    """A design under test. Has a top and may have tests."""
+  <!-- ============================================================ -->
+  <section class="ingot-section ingot-section--cta" data-reveal>
+    <div class="ingot-container ingot-cta">
+      <h2>Start with your first block.</h2>
+      <p>Ten minutes from clone to a passing regression.</p>
+      <a href="{{ 'start/first-block/' | url }}" class="ingot-btn ingot-btn--primary">
+        Read the tutorial
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </a>
+    </div>
+  </section>
 
-    name: str
-    top: str | None = None
-    dut: str = "dut"
+</div>
+{% endblock %}
 
+{% block content %}{% endblock %}
+docs/stylesheets/landing.css
 
-class LibraryConfig(Strict):
-    """A collection of components. Depended on, never run directly."""
+Separate file — the landing page has enough CSS to warrant its own. Add to extra_css.
 
-    name: str
+css
+/* =========================================================================
+   Ingot landing page
+   ========================================================================= */
 
+.ingot-landing {
+  --ingot-ink:       #0F1114;
+  --ingot-ink-2:     #16191D;
+  --ingot-steel:     #2E3338;
+  --ingot-silver:    #C8D0D8;
+  --ingot-silver-2:  #9AA5B1;
+  --ingot-text:      #E6EAEE;
+  --ingot-muted:     #8C96A0;
+  --ingot-accent:    #D4DCE4;
+  --ingot-ok:        #6FCF97;
 
-class TestConfig(Strict):
-    """A named test in a block's testlist."""
+  --ingot-ease:      cubic-bezier(0.22, 1, 0.36, 1);
 
-    seeds: int = 1
-    plusargs: list[str] = Field(default_factory=list)
-
-
-class ProfileConfig(Strict):
-    """A named elaboration configuration.
-
-    Profiles control elaboration-time options only. Runtime behaviour —
-    seed, test selection, waveform dumping — is controlled by plusargs.
-    """
-
-    description: str = ""
-    inherits: str | None = None
-    elab_args: list[str] = Field(default_factory=list)
-    defines: dict[str, str] = Field(default_factory=dict)
-    coverage: bool = False
-    coverage_metrics: str = "line+cond+fsm+tgl+branch"
-    coverage_scope: str = "dut"
-
-
-class Manifest(Strict):
-    """A parsed unit `ingot.toml`."""
-
-    block: BlockConfig | None = None
-    library: LibraryConfig | None = None
-    dependencies: dict[str, str] = Field(default_factory=dict)
-    sources: SourcesConfig = Field(default_factory=SourcesConfig)
-    defines: dict[str, str] = Field(default_factory=dict)
-    tests: dict[str, TestConfig] = Field(default_factory=dict)
-    profiles: dict[str, ProfileConfig] = Field(default_factory=dict)
-
-    @property
-    def name(self) -> str:
-        if self.block is not None:
-            return self.block.name
-        if self.library is not None:
-            return self.library.name
-        raise ManifestError("manifest declares neither [block] nor [library]")
-
-    @property
-    def is_library(self) -> bool:
-        return self.library is not None
-
-    @property
-    def top(self) -> str | None:
-        return self.block.top if self.block else None
-
-    @property
-    def dut(self) -> str:
-        return self.block.dut if self.block else "dut"
-
-load_manifest in discover.py needs one adjustment: a [library] with tests should be rejected.
-
-python
-    if manifest.library is not None and manifest.tests:
-        raise ManifestError(
-            f"{path}: a [library] cannot have [tests].\n"
-            f"  Libraries are exercised by unit tests, not testbenches. If this\n"
-            f"  unit has a DUT and a testbench, declare it as a [block]."
-        )
-
-Add that after validation, before return.
-
-tools/ingot/manifest/profiles.py
-python
-"""Build profile resolution.
-
-Profiles are defined at the project root and apply to every block. Ingot
-ships defaults for `fast`, `debug`, and `coverage`; a project may override
-them by name or add its own. A block may further override in its manifest
-for something specific to that block. Any profile may inherit another.
-"""
-
-from __future__ import annotations
-
-import hashlib
-import tomllib
-from dataclasses import dataclass, field
-from pathlib import Path
-
-from ingot.manifest.discover import MANIFEST_NAME
-from ingot.manifest.schema import ManifestError, ProfileConfig
-
-DEFAULT_PROFILE = "fast"
-
-BUILTIN: dict[str, ProfileConfig] = {
-    "fast": ProfileConfig(
-        description="Regressions and sanity checks. No debug access, no coverage.",
-    ),
-    "debug": ProfileConfig(
-        description="Failure investigation in Verdi. Waveforms and source-level debug.",
-        elab_args=["-debug_access+all", "-kdb"],
-    ),
-    "coverage": ProfileConfig(
-        description="Coverage closure. Instrumented, slower. Testbench excluded.",
-        coverage=True,
-    ),
+  font-family: -apple-system, "Segoe UI", Inter, Roboto, "Helvetica Neue", sans-serif;
+  color: var(--ingot-text);
+  background: var(--ingot-ink);
+  -webkit-font-smoothing: antialiased;
 }
 
-
-@dataclass(frozen=True)
-class Profile:
-    """A fully resolved profile."""
-
-    name: str
-    description: str
-    elab_args: tuple[str, ...]
-    defines: dict[str, str] = field(default_factory=dict)
-    coverage: bool = False
-    coverage_metrics: str = "line+cond+fsm+tgl+branch"
-    coverage_scope: str = "dut"
-
-
-def define_key(defines: dict[str, str]) -> str:
-    """Directory key for an analysis with the given effective defines.
-
-    Analysis output depends on sources and defines. Builds with identical
-    defines share one analysis; the common case — no defines — is `base`.
-    """
-    if not defines:
-        return "base"
-    joined = "|".join(f"{k}={defines[k]}" for k in sorted(defines))
-    return hashlib.sha256(joined.encode()).hexdigest()[:12]
-
-
-def _read_profiles_section(path: Path) -> dict[str, ProfileConfig]:
-    if not path.is_file():
-        return {}
-    with path.open("rb") as handle:
-        data = tomllib.load(handle)
-    configs: dict[str, ProfileConfig] = {}
-    for name, raw in data.get("profiles", {}).items():
-        try:
-            configs[name] = ProfileConfig.model_validate(raw)
-        except Exception as error:
-            raise ManifestError(f"{path}: [profiles.{name}]: {error}") from error
-    return configs
-
-
-def load_profile_configs(
-    root: Path, block_root: Path | None = None
-) -> dict[str, ProfileConfig]:
-    """Built-ins, overridden by the project, overridden by the block."""
-    configs = dict(BUILTIN)
-    configs.update(_read_profiles_section(root / MANIFEST_NAME))
-    if block_root is not None:
-        configs.update(_read_profiles_section(block_root / MANIFEST_NAME))
-    return configs
-
-
-def resolve_profile(name: str, configs: dict[str, ProfileConfig]) -> Profile:
-    """Resolve a profile, applying inheritance ancestors-first."""
-    if name not in configs:
-        known = ", ".join(sorted(configs))
-        raise ManifestError(f"unknown profile {name!r}.\n  Known profiles: {known}")
-
-    chain: list[ProfileConfig] = []
-    seen: list[str] = []
-    current: str | None = name
-    while current is not None:
-        if current in seen:
-            raise ManifestError(
-                f"profile inheritance cycle: {' -> '.join([*seen, current])}"
-            )
-        if current not in configs:
-            raise ManifestError(
-                f"profile {seen[-1]!r} inherits unknown profile {current!r}"
-            )
-        seen.append(current)
-        chain.append(configs[current])
-        current = configs[current].inherits
-    chain.reverse()
-
-    elab_args: list[str] = []
-    defines: dict[str, str] = {}
-    for config in chain:
-        elab_args.extend(config.elab_args)
-        defines.update(config.defines)
-
-    leaf = chain[-1]
-    return Profile(
-        name=name,
-        description=leaf.description or next(
-            (c.description for c in reversed(chain) if c.description), ""
-        ),
-        elab_args=tuple(elab_args),
-        defines=defines,
-        coverage=any(c.coverage for c in chain),
-        coverage_metrics=leaf.coverage_metrics,
-        coverage_scope=leaf.coverage_scope,
-    )
-
-
-def load_profile(
-    root: Path, name: str = DEFAULT_PROFILE, block_root: Path | None = None
-) -> Profile:
-    return resolve_profile(name, load_profile_configs(root, block_root))
-
-
-def list_profiles(root: Path, block_root: Path | None = None) -> list[Profile]:
-    configs = load_profile_configs(root, block_root)
-    return [resolve_profile(name, configs) for name in sorted(configs)]
-tools/ingot/manifest/resolve.py — additions
-
-Add a units property to CompilePlan and a per-unit filelist writer. Leave the existing write_filelist(plan, ...) in place for the tests.
-
-python
-    @property
-    def units(self) -> tuple[Unit, ...]:
-        """Every unit in the build, dependencies first, this block last."""
-        return (*self.dependencies, self.unit)
-python
-def write_sources_filelist(
-    sources: tuple[Source, ...] | list[Source],
-    incdirs: tuple[Path, ...],
-    defines: dict[str, str],
-    path: Path,
-    language: Language,
-    label: str,
-) -> Path:
-    """Write a filelist for one unit and one language.
-
-    Include directories and defines are omitted for VHDL, which has no
-    preprocessor.
-    """
-    compiled = [s for s in sources if s.compiled and s.language is language]
-    path.parent.mkdir(parents=True, exist_ok=True)
-
-    lines = [f"// generated by ingot for {label} ({language})", f"// {len(compiled)} sources", ""]
-    if language is not Language.VHDL:
-        lines.extend(f"+incdir+{d}" for d in incdirs)
-        for key in sorted(defines):
-            value = defines[key]
-            lines.append(f"+define+{key}={value}" if value else f"+define+{key}")
-        if incdirs or defines:
-            lines.append("")
-    lines.extend(str(s.path) for s in compiled)
-    path.write_text("\n".join(lines) + "\n")
-    return path
-tools/ingot/vcs/build.py
-python
-"""Analysis and elaboration with VCS.
-
-Every unit — library or block — is analyzed into its own VCS library,
-keyed by the effective define set, and shared by everything that depends
-on it. Elaboration is per block, per profile. A `synopsys_sim.setup`
-generated into each working directory maps library names to analysis
-directories.
-
-    build/
-    ├── ing/an/base/AN.DB              shared by every block depending on ing
-    └── exemplar/
-        ├── an/base/AN.DB
-        ├── fast/{synopsys_sim.setup, csrc/, simv, artifact.json, runs/}
-        └── debug/...
-"""
-
-from __future__ import annotations
-
-import hashlib
-import json
-import subprocess
-from dataclasses import asdict, dataclass
-from pathlib import Path
-
-from ingot.exec.resolve import resolve_tool
-from ingot.exec.run import ToolRun, history_path, run_tool
-from ingot.manifest.discover import Unit
-from ingot.manifest.order import order_sources
-from ingot.manifest.profiles import Profile, define_key
-from ingot.manifest.resolve import CompilePlan, write_sources_filelist
-from ingot.manifest.schema import Language
-
-ARTIFACT_FILE = "artifact.json"
-SETUP_FILE = "synopsys_sim.setup"
-HIER_FILE = "cov.hier"
-STAMP_FILE = ".analyzed"
-SIMV = "simv"
-
-
-class BuildError(RuntimeError):
-    """Raised when analysis or elaboration fails."""
-
-    def __init__(self, message: str, run: ToolRun | None = None) -> None:
-        super().__init__(message)
-        self.run = run
-
-
-@dataclass(frozen=True)
-class BuildOptions:
-    """Per-invocation options layered on top of a profile."""
-
-    incremental: bool = True
-    jobs: int = 1
-    extra_elab_args: tuple[str, ...] = ()
-    dry_run: bool = False
-
-
-@dataclass(frozen=True)
-class BuildContext:
-    """Everything a build needs, resolved once."""
-
-    plan: CompilePlan
-    profile: Profile
-    options: BuildOptions
-
-    @property
-    def root(self) -> Path:
-        return self.plan.root
-
-    @property
-    def build_root(self) -> Path:
-        return self.root / "build"
-
-    @property
-    def defines(self) -> dict[str, str]:
-        """Effective defines: dependencies, then block, then profile."""
-        merged: dict[str, str] = {}
-        for unit in self.plan.units:
-            merged.update(unit.manifest.defines)
-        merged.update(self.profile.defines)
-        return merged
-
-    @property
-    def analysis_key(self) -> str:
-        return define_key(self.defines)
-
-    @property
-    def incdirs(self) -> tuple[Path, ...]:
-        return self.plan.incdirs
-
-    def analysis_dir(self, unit: Unit) -> Path:
-        return self.build_root / unit.name / "an" / self.analysis_key
-
-    @property
-    def profile_dir(self) -> Path:
-        return self.build_root / self.plan.name / self.profile.name
-
-    @property
-    def simv(self) -> Path:
-        return self.profile_dir / SIMV
-
-    def unit_hash(self, unit: Unit) -> str:
-        """Digest of one unit's analysis inputs."""
-        digest = hashlib.sha256()
-        for source in unit.sources:
-            stat = source.path.stat()
-            digest.update(str(source.path).encode())
-            digest.update(str(stat.st_size).encode())
-            digest.update(str(int(stat.st_mtime)).encode())
-        for directory in self.incdirs:
-            digest.update(str(directory).encode())
-        for key in sorted(self.defines):
-            digest.update(f"{key}={self.defines[key]}".encode())
-        return digest.hexdigest()[:16]
-
-    def options_hash(self) -> str:
-        """Digest of everything besides sources that affects the binary."""
-        parts = [
-            f"profile={self.profile.name}",
-            *self.profile.elab_args,
-            *self.options.extra_elab_args,
-            f"coverage={self.profile.coverage}",
-            f"metrics={self.profile.coverage_metrics}",
-            f"scope={self.profile.coverage_scope}",
-            f"top={self.plan.top}",
-        ]
-        return hashlib.sha256("|".join(parts).encode()).hexdigest()[:12]
-
-
-@dataclass(frozen=True)
-class Artifact:
-    """An elaborated simulation binary and what produced it."""
-
-    block: str
-    profile: str
-    path: str
-    build_dir: str
-    manifest_hash: str
-    options_hash: str
-    tool_version: str
-    top: str
-
-    @property
-    def simv(self) -> Path:
-        return Path(self.path)
-
-    def save(self) -> Path:
-        target = Path(self.build_dir) / ARTIFACT_FILE
-        target.write_text(json.dumps(asdict(self), indent=2) + "\n")
-        return target
-
-    @classmethod
-    def load(cls, profile_dir: Path) -> Artifact | None:
-        target = profile_dir / ARTIFACT_FILE
-        if not target.is_file():
-            return None
-        try:
-            return cls(**json.loads(target.read_text()))
-        except (json.JSONDecodeError, TypeError):
-            return None
-
-    def is_current(self, ctx: BuildContext) -> bool:
-        return (
-            self.simv.is_file()
-            and self.manifest_hash == ctx.plan.content_hash()
-            and self.options_hash == ctx.options_hash()
-        )
-
-
-def vcs_version() -> str:
-    try:
-        result = subprocess.run(
-            [str(resolve_tool("vcs")), "-ID"],
-            capture_output=True, text=True, timeout=30,
-        )
-    except Exception:
-        return "unknown"
-    for line in result.stdout.splitlines():
-        if "Compiler version" in line:
-            return line.split("=", 1)[-1].strip()
-    lines = result.stdout.strip().splitlines()
-    return lines[0] if lines else "unknown"
-
-
-def write_setup(ctx: BuildContext, target_dir: Path, units: tuple[Unit, ...], default: Unit) -> Path:
-    """Write a `synopsys_sim.setup` mapping library names to analysis dirs.
-
-    Args:
-        ctx: Build context.
-        target_dir: Directory the tool will run from.
-        units: Units whose libraries must be visible.
-        default: The unit whose library is `DEFAULT` (the one being
-            analyzed, or the block being elaborated).
-    """
-    lines = ["WORK > DEFAULT", f"DEFAULT : {ctx.analysis_dir(default) / 'AN.DB'}"]
-    lines.extend(f"{u.name} : {ctx.analysis_dir(u) / 'AN.DB'}" for u in units)
-    target_dir.mkdir(parents=True, exist_ok=True)
-    path = target_dir / SETUP_FILE
-    path.write_text("\n".join(lines) + "\n")
-    return path
-
-
-def analyze_unit(ctx: BuildContext, unit: Unit, upstream: tuple[Unit, ...]) -> list[ToolRun]:
-    """Analyze one unit into its library, skipping if current."""
-    an_dir = ctx.analysis_dir(unit)
-    an_dir.mkdir(parents=True, exist_ok=True)
-
-    stamp = an_dir / STAMP_FILE
-    current_hash = ctx.unit_hash(unit)
-    if stamp.is_file() and stamp.read_text().strip() == current_hash:
-        return []
-
-    write_setup(ctx, an_dir, (*upstream, unit), default=unit)
-
-    ordered = order_sources(list(unit.sources), unit.manifest.sources.order)
-    runs: list[ToolRun] = []
-    history = history_path(ctx.root)
-    meta = {"block": ctx.plan.name, "unit": unit.name, "profile": ctx.profile.name}
-    label = f"{ctx.plan.name}/{unit.name}"
-
-    vhdl = [s for s in ordered if s.compiled and s.language is Language.VHDL]
-    verilog = [s for s in ordered if s.compiled and s.language is not Language.VHDL]
-
-    if vhdl:
-        filelist = write_sources_filelist(
-            ordered, ctx.incdirs, ctx.defines, an_dir / "vhdl.f", Language.VHDL, label
-        )
-        run = run_tool(
-            tool="vhdlan", phase="analyze",
-            argv=[str(resolve_tool("vhdlan")), "-full64", "-work", unit.name,
-                  "-f", str(filelist), "-l", "vhdlan.log"],
-            cwd=an_dir, log=an_dir / "vhdlan.log",
-            metadata=meta, record_to=history, dry_run=ctx.options.dry_run,
-        )
-        runs.append(run)
-        if not run.ok:
-            raise BuildError(f"vhdlan failed for {unit.name}, see {run.log}", run)
-
-    if verilog:
-        filelist = write_sources_filelist(
-            ordered, ctx.incdirs, ctx.defines, an_dir / "sv.f", Language.SYSTEMVERILOG, label
-        )
-        run = run_tool(
-            tool="vlogan", phase="analyze",
-            argv=[str(resolve_tool("vlogan")), "-full64", "-sverilog", "-work", unit.name,
-                  "-f", str(filelist), "-l", "vlogan.log"],
-            cwd=an_dir, log=an_dir / "vlogan.log",
-            metadata=meta, record_to=history, dry_run=ctx.options.dry_run,
-        )
-        runs.append(run)
-        if not run.ok:
-            raise BuildError(f"vlogan failed for {unit.name}, see {run.log}", run)
-
-    if not ctx.options.dry_run:
-        stamp.write_text(current_hash + "\n")
-    return runs
-
-
-def analyze(ctx: BuildContext) -> list[ToolRun]:
-    """Analyze every unit in dependency order. Each is skipped if current."""
-    runs: list[ToolRun] = []
-    done: list[Unit] = []
-    for unit in ctx.plan.units:
-        runs.extend(analyze_unit(ctx, unit, tuple(done)))
-        done.append(unit)
-    return runs
-
-
-def write_coverage_hierarchy(ctx: BuildContext) -> Path | None:
-    """Generate the `-cm_hier` file. Default scope is the DUT subtree."""
-    if ctx.profile.coverage_scope == "all":
-        return None
-    path = ctx.profile_dir / HIER_FILE
-    path.write_text(
-        f"// generated by ingot — coverage scope, profile {ctx.profile.name}\n"
-        f"+tree {ctx.plan.top}.{ctx.plan.unit.manifest.dut}\n"
-    )
-    return path
-
-
-def elaborate(ctx: BuildContext) -> tuple[Artifact, ToolRun]:
-    """Elaborate the block into its profile directory."""
-    if ctx.plan.top is None:
-        raise BuildError(
-            f"{ctx.plan.name}: no top module. Set `top` under [block].\n"
-            f"  If this is a library, it is exercised by unit tests, not `ingot build`."
-        )
-
-    ctx.profile_dir.mkdir(parents=True, exist_ok=True)
-    write_setup(ctx, ctx.profile_dir, ctx.plan.units, default=ctx.plan.unit)
-
-    argv = [
-        str(resolve_tool("vcs")), "-full64",
-        f"-Mdir={ctx.profile_dir / 'csrc'}",
-        "-o", str(ctx.simv),
-        "-l", "elab.log",
-    ]
-    if ctx.options.incremental:
-        argv.append("-Mupdate")
-    if ctx.options.jobs > 1:
-        argv.append(f"-j{ctx.options.jobs}")
-    argv.extend(ctx.profile.elab_args)
-    if ctx.profile.coverage:
-        argv += ["-cm", ctx.profile.coverage_metrics]
-        hierarchy = write_coverage_hierarchy(ctx)
-        if hierarchy is not None:
-            argv += ["-cm_hier", str(hierarchy)]
-    argv.extend(ctx.options.extra_elab_args)
-    argv.append(ctx.plan.top)
-
-    run = run_tool(
-        tool="vcs", phase="elaborate", argv=argv,
-        cwd=ctx.profile_dir, log=ctx.profile_dir / "elab.log",
-        metadata={"block": ctx.plan.name, "profile": ctx.profile.name, "top": ctx.plan.top},
-        record_to=history_path(ctx.root), dry_run=ctx.options.dry_run,
-    )
-    if not run.ok:
-        raise BuildError(f"vcs elaboration failed, see {run.log}", run)
-
-    artifact = Artifact(
-        block=ctx.plan.name, profile=ctx.profile.name,
-        path=str(ctx.simv), build_dir=str(ctx.profile_dir),
-        manifest_hash=ctx.plan.content_hash(), options_hash=ctx.options_hash(),
-        tool_version="dry-run" if ctx.options.dry_run else vcs_version(),
-        top=ctx.plan.top,
-    )
-    if not ctx.options.dry_run:
-        artifact.save()
-    return artifact, run
-
-
-def build(ctx: BuildContext) -> tuple[Artifact, list[ToolRun]]:
-    """Analyze and elaborate, reusing a current artifact."""
-    existing = Artifact.load(ctx.profile_dir)
-    if existing is not None and existing.is_current(ctx):
-        return existing, []
-    runs = analyze(ctx)
-    artifact, elab_run = elaborate(ctx)
-    return artifact, [*runs, elab_run]
-tools/ingot/vcs/sim.py
-python
-"""Running simulations against an elaborated artifact."""
-
-from __future__ import annotations
-
-import random
-import re
-from dataclasses import dataclass
-from pathlib import Path
-
-from ingot.exec.run import ToolRun, history_path, run_tool
-from ingot.vcs.build import Artifact
-
-#: VCS exits zero on `$fatal`; the log is authoritative.
-FAILURE_PATTERNS = (
-    re.compile(r"^Fatal:", re.MULTILINE),
-    re.compile(r"^Error-\[", re.MULTILINE),
-    re.compile(r"INGOT_FAIL"),
-    re.compile(r"^UVM_(?:ERROR|FATAL)\s+@", re.MULTILINE),
-    re.compile(r"^UVM_(?:ERROR|FATAL)\s*:\s*[1-9]\d*", re.MULTILINE),
-)
-
-
-@dataclass(frozen=True)
-class SimResult:
-    test: str
-    seed: int
-    passed: bool
-    run: ToolRun
-    reason: str
-
-    @property
-    def log(self) -> Path:
-        return Path(self.run.log)
-
-
-def judge(log_text: str, returncode: int) -> tuple[bool, str]:
-    """Decide pass or fail from a log. Heuristic; errs toward failure."""
-    if returncode != 0:
-        return False, f"exit status {returncode}"
-    if not log_text.strip():
-        return False, "empty log"
-    for pattern in FAILURE_PATTERNS:
-        match = pattern.search(log_text)
-        if match:
-            return False, log_text[match.start():].splitlines()[0].strip()[:120]
-    return True, "ok"
-
-
-def simulate(
-    artifact: Artifact,
-    root: Path,
-    test: str,
-    seed: int | None = None,
-    plusargs: tuple[str, ...] = (),
-    waves: bool = False,
-    dry_run: bool = False,
-) -> SimResult:
-    """Run one test. The seed is always recorded so any failure reproduces."""
-    if seed is None:
-        seed = random.randint(1, 2**31 - 1)
-
-    run_dir = Path(artifact.build_dir) / "runs" / f"{test}_{seed}"
-    argv = [
-        str(artifact.simv),
-        f"+UVM_TESTNAME={test}",
-        f"+ntb_random_seed={seed}",
-        "-l", "sim.log",
-    ]
-    if waves:
-        argv.append("+waves")
-    argv.extend(plusargs)
-
-    run = run_tool(
-        tool="simv", phase="simulate", argv=argv,
-        cwd=run_dir, log=run_dir / "sim.log",
-        metadata={"block": artifact.block, "profile": artifact.profile,
-                  "test": test, "seed": str(seed)},
-        record_to=history_path(root), dry_run=dry_run,
-    )
-    if dry_run:
-        return SimResult(test, seed, True, run, "dry run")
-
-    log_text = Path(run.log).read_text(errors="replace")
-    passed, reason = judge(log_text, run.returncode)
-    return SimResult(test, seed, passed, run, reason)
-tools/ingot/commands/_common.py
-
-Shared plumbing so the three commands stay small.
-
-python
-"""Shared helpers for the flow commands."""
-
-from __future__ import annotations
-
-import typer
-
-from ingot.exec.resolve import ToolNotFoundError
-from ingot.manifest.profiles import Profile, load_profile
-from ingot.manifest.resolve import CompilePlan, resolve_block
-from ingot.manifest.schema import ManifestError
-from ingot.vcs.build import BuildContext, BuildError, BuildOptions
-
-FLOW_ERRORS = (ManifestError, ToolNotFoundError, BuildError)
-
-
-def fail(message: str) -> typer.Exit:
-    typer.secho(f"error: {message}", fg=typer.colors.RED, err=True)
-    return typer.Exit(1)
-
-
-def context(block: str, profile: str, options: BuildOptions) -> tuple[CompilePlan, Profile, BuildContext]:
-    plan = resolve_block(block)
-    prof = load_profile(plan.root, profile, block_root=plan.unit.root)
-    return plan, prof, BuildContext(plan=plan, profile=prof, options=options)
-
-
-def repro_hint(block: str, test: str, seed: int) -> str:
-    return (
-        f"  reproduce:  ingot sim {block} -t {test} -s {seed}\n"
-        f"  debug:      ingot sim {block} -t {test} -s {seed} -p debug --waves"
-    )
-tools/ingot/commands/build.py
-python
-"""Build a block into a simulation binary."""
-
-from __future__ import annotations
-
-import shutil
-from typing import Annotated
-
-import typer
-
-from ingot.commands._common import FLOW_ERRORS, context, fail
-from ingot.vcs.build import BuildOptions, build
-
-app = typer.Typer(help="Analyze and elaborate a block.")
-
-
-@app.callback(invoke_without_command=True)
-def build_command(
-    block: Annotated[str, typer.Argument(help="Block name.")],
-    profile: Annotated[str, typer.Option("--profile", "-p")] = "fast",
-    clean: Annotated[bool, typer.Option("--clean", help="Discard the profile's build and rebuild.")] = False,
-    jobs: Annotated[int, typer.Option("--jobs", "-j")] = 1,
-    dry_run: Annotated[bool, typer.Option("--dry-run")] = False,
-) -> None:
-    """Analyze and elaborate a block for a profile.
-
-    Analysis is shared across profiles and blocks; elaboration is per
-    profile. A current artifact is reused unless sources, defines, or the
-    profile have changed.
-    """
-    options = BuildOptions(incremental=not clean, jobs=jobs, dry_run=dry_run)
-    try:
-        _, prof, ctx = context(block, profile, options)
-        if clean and not dry_run:
-            shutil.rmtree(ctx.profile_dir, ignore_errors=True)
-        artifact, runs = build(ctx)
-    except FLOW_ERRORS as error:
-        raise fail(str(error)) from error
-
-    if dry_run:
-        for run in runs:
-            typer.echo(" ".join(run.argv))
-        return
-    if not runs:
-        typer.echo(f"{block} [{prof.name}]: artifact current")
-        return
-    for run in runs:
-        typer.echo(f"  {run.summary()}")
-    typer.secho(f"{block} [{prof.name}]: {artifact.simv}", fg=typer.colors.GREEN)
-tools/ingot/commands/sim.py
-python
-"""Run one simulation."""
-
-from __future__ import annotations
-
-from typing import Annotated
-
-import typer
-
-from ingot.commands._common import FLOW_ERRORS, context, fail, repro_hint
-from ingot.vcs.build import BuildOptions, build
-from ingot.vcs.sim import simulate
-
-app = typer.Typer(help="Run a single test.")
-
-
-@app.callback(invoke_without_command=True)
-def sim_command(
-    block: Annotated[str, typer.Argument()],
-    test: Annotated[str, typer.Option("--test", "-t")] = "smoke",
-    seed: Annotated[int | None, typer.Option("--seed", "-s")] = None,
-    profile: Annotated[str, typer.Option("--profile", "-p")] = "fast",
-    waves: Annotated[bool, typer.Option("--waves", help="Dump waveforms. Implies -p debug.")] = False,
-    dry_run: Annotated[bool, typer.Option("--dry-run")] = False,
-) -> None:
-    """Run one test against a block, building first if needed.
-
-    Pass or fail is judged from the log, not the exit code — VCS exits
-    zero on `$fatal`. The seed is always printed so a failure reproduces.
-    """
-    if waves and profile == "fast":
-        typer.secho("--waves requires debug access; using profile 'debug'", err=True)
-        profile = "debug"
-
-    try:
-        plan, _, ctx = context(block, profile, BuildOptions(dry_run=dry_run))
-        artifact, _ = build(ctx)
-        test_config = plan.unit.manifest.tests.get(test)
-        plusargs = tuple(test_config.plusargs) if test_config else ()
-        result = simulate(artifact, plan.root, test, seed, plusargs, waves, dry_run)
-    except FLOW_ERRORS as error:
-        raise fail(str(error)) from error
-
-    if dry_run:
-        typer.echo(" ".join(result.run.argv))
-        return
-
-    status, colour = ("PASS", typer.colors.GREEN) if result.passed else ("FAIL", typer.colors.RED)
-    typer.secho(f"{status}  {block}/{test}  seed={result.seed}  {result.run.duration_s:.1f}s", fg=colour)
-    if not result.passed:
-        typer.echo(f"  {result.reason}")
-        typer.echo(f"  log:        {result.log}")
-        typer.echo(repro_hint(block, test, result.seed))
-        raise typer.Exit(1)
-tools/ingot/commands/regress.py
-python
-"""Run a block's testlist."""
-
-from __future__ import annotations
-
-import json
-from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import Annotated
-
-import typer
-
-from ingot.commands._common import FLOW_ERRORS, context, fail, repro_hint
-from ingot.manifest.schema import ManifestError
-from ingot.vcs.build import BuildOptions, build
-from ingot.vcs.sim import SimResult, simulate
-
-app = typer.Typer(help="Run a block's regression.")
-
-
-@app.callback(invoke_without_command=True)
-def regress_command(
-    block: Annotated[str, typer.Argument()],
-    profile: Annotated[str, typer.Option("--profile", "-p")] = "fast",
-    jobs: Annotated[int, typer.Option("--jobs", "-j")] = 4,
-    seeds: Annotated[int | None, typer.Option("--seeds", help="Override seed count for every test.")] = None,
-    as_json: Annotated[bool, typer.Option("--json")] = False,
-) -> None:
-    """Elaborate once, then run every test in the block's testlist."""
-    try:
-        plan, _, ctx = context(block, profile, BuildOptions())
-        tests = plan.unit.manifest.tests
-        if not tests:
-            raise ManifestError(f"{block}: no tests. Add a [tests.<name>] section.")
-        artifact, _ = build(ctx)
-    except FLOW_ERRORS as error:
-        raise fail(str(error)) from error
-
-    work = [(name, cfg) for name, cfg in tests.items()
-            for _ in range(seeds if seeds is not None else cfg.seeds)]
-
-    results: list[SimResult] = []
-    with ThreadPoolExecutor(max_workers=jobs) as pool:
-        futures = [pool.submit(simulate, artifact, plan.root, name, None, tuple(cfg.plusargs))
-                   for name, cfg in work]
-        for future in as_completed(futures):
-            result = future.result()
-            results.append(result)
-            if not as_json:
-                mark, colour = ("PASS", typer.colors.GREEN) if result.passed else ("FAIL", typer.colors.RED)
-                typer.secho(f"  {mark}  {result.test:<24} seed={result.seed:<11} {result.run.duration_s:6.1f}s", fg=colour)
-
-    failures = [r for r in results if not r.passed]
-    if as_json:
-        typer.echo(json.dumps({
-            "block": block, "profile": profile,
-            "total": len(results), "passed": len(results) - len(failures),
-            "failed": [{"test": r.test, "seed": r.seed, "reason": r.reason, "log": str(r.log)} for r in failures],
-        }, indent=2))
-    else:
-        typer.echo(f"\n{len(results) - len(failures)}/{len(results)} passed  [{profile}]")
-        for r in failures:
-            typer.echo(f"\n  {r.test} seed={r.seed}: {r.reason}")
-            typer.echo(repro_hint(block, r.test, r.seed))
-    if failures:
-        raise typer.Exit(1)
-tools/ingot/commands/profiles.py
-python
-"""List build profiles."""
-
-from __future__ import annotations
-
-from typing import Annotated
-
-import typer
-
-from ingot.commands._common import fail
-from ingot.manifest.profiles import list_profiles
-from ingot.manifest.resolve import project_root, resolve_block
-from ingot.manifest.schema import ManifestError
-
-app = typer.Typer(help="Build profiles.")
-
-
-@app.callback(invoke_without_command=True)
-def profiles_command(
-    block: Annotated[str | None, typer.Option("--block", "-b", help="Include a block's overrides.")] = None,
-) -> None:
-    """List build profiles and what each is for."""
-    try:
-        root = project_root()
-        block_root = resolve_block(block, root).unit.root if block else None
-        resolved = list_profiles(root, block_root)
-    except ManifestError as error:
-        raise fail(str(error)) from error
-
-    for p in resolved:
-        typer.secho(p.name, bold=True)
-        if p.description:
-            typer.echo(f"  {p.description}")
-        if p.elab_args:
-            typer.echo(f"  elab:      {' '.join(p.elab_args)}")
-        if p.defines:
-            typer.echo(f"  defines:   {', '.join(f'{k}={v}' if v else k for k, v in p.defines.items())}")
-        if p.coverage:
-            typer.echo(f"  coverage:  {p.coverage_metrics}  scope={p.coverage_scope}")
-        typer.echo("")
-tools/ingot/commands/clean.py
-python
-"""Remove build output."""
-
-from __future__ import annotations
-
-import shutil
-from typing import Annotated
-
-import typer
-
-from ingot.commands._common import fail
-from ingot.manifest.resolve import project_root, resolve_block
-from ingot.manifest.schema import ManifestError
-
-app = typer.Typer(help="Remove build output.")
-
-
-@app.callback(invoke_without_command=True)
-def clean_command(
-    block: Annotated[str | None, typer.Argument(help="Block to clean. Omit for everything.")] = None,
-    profile: Annotated[str | None, typer.Option("--profile", "-p", help="Only this profile's elaboration.")] = None,
-) -> None:
-    """Remove build output. Run history in `.ingot/` is never touched."""
-    try:
-        root = project_root()
-        if block is None:
-            target = root / "build"
-        else:
-            plan = resolve_block(block, root)
-            target = root / "build" / plan.name
-            if profile:
-                target = target / profile
-    except ManifestError as error:
-        raise fail(str(error)) from error
-
-    if not target.exists():
-        typer.echo(f"nothing to clean at {target.relative_to(root)}")
-        return
-    shutil.rmtree(target)
-    typer.echo(f"removed {target.relative_to(root)}")
-cli.py — register
-python
-from ingot.commands import auth, build, clean, commit, issue, manifest, mr, profiles, regress, sim
-
-app.add_typer(build.app, name="build")
-app.add_typer(sim.app, name="sim")
-app.add_typer(regress.app, name="regress")
-app.add_typer(clean.app, name="clean")
-app.add_typer(profiles.app, name="profiles")
-app.add_typer(manifest.app, name="manifest")
-blocks/exemplar/ingot.toml
+.ingot-container {
+  max-width: 68rem;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+/* ---- Hero ------------------------------------------------------------- */
+
+.ingot-hero {
+  position: relative;
+  min-height: 88vh;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  background: var(--ingot-ink);
+}
+
+#ingot-traces {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.55;
+  will-change: transform;
+}
+
+.ingot-hero__gradient {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 60% 80% at 20% 50%, rgba(15, 17, 20, 0.92) 0%, rgba(15, 17, 20, 0.4) 60%, transparent 100%),
+    linear-gradient(180deg, transparent 70%, var(--ingot-ink) 100%);
+  pointer-events: none;
+}
+
+.ingot-hero__content {
+  position: relative;
+  z-index: 1;
+  padding-top: 4rem;
+  padding-bottom: 6rem;
+  max-width: 48rem;
+  animation: ingot-rise 0.9s var(--ingot-ease) both;
+}
+
+.ingot-lockup {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 2.5rem;
+  color: var(--ingot-silver);
+  text-decoration: none;
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.ingot-lockup img {
+  height: 1.75rem;
+  width: auto;
+}
+
+.ingot-hero__headline {
+  font-size: clamp(2.2rem, 5vw, 3.4rem);
+  font-weight: 500;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  margin: 0 0 1.5rem;
+  color: #fff;
+}
+
+.ingot-hero__lede {
+  font-size: 1.1rem;
+  line-height: 1.65;
+  color: var(--ingot-muted);
+  max-width: 36rem;
+  margin: 0 0 2.5rem;
+}
+
+.ingot-hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.ingot-hero__scroll {
+  position: absolute;
+  left: 50%;
+  bottom: 2rem;
+  transform: translateX(-50%);
+  width: 1.5rem;
+  height: 1.5rem;
+  color: var(--ingot-muted);
+  opacity: 0.6;
+  animation: ingot-bob 2.2s ease-in-out infinite;
+}
+
+.ingot-hero__scroll svg {
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* ---- Buttons ---------------------------------------------------------- */
+
+.ingot-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.85rem 1.5rem;
+  border-radius: 0.375rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  text-decoration: none;
+  border: 1px solid transparent;
+  transition: transform 0.25s var(--ingot-ease),
+              box-shadow 0.25s var(--ingot-ease),
+              background 0.2s, border-color 0.2s;
+}
+
+.ingot-btn svg {
+  width: 1.1rem;
+  height: 1.1rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform 0.25s var(--ingot-ease);
+}
+
+.ingot-btn--primary {
+  background: var(--ingot-silver);
+  color: var(--ingot-ink);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px -8px rgba(200, 208, 216, 0.35);
+}
+
+.ingot-btn--primary:hover {
+  background: #fff;
+  transform: translateY(-2px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3), 0 14px 32px -8px rgba(200, 208, 216, 0.45);
+}
+
+.ingot-btn--primary:hover svg {
+  transform: translateX(3px);
+}
+
+.ingot-btn--ghost {
+  background: transparent;
+  color: var(--ingot-text);
+  border-color: rgba(200, 208, 216, 0.25);
+}
+
+.ingot-btn--ghost:hover {
+  border-color: rgba(200, 208, 216, 0.6);
+  background: rgba(200, 208, 216, 0.05);
+  transform: translateY(-2px);
+}
+
+/* ---- Sections --------------------------------------------------------- */
+
+.ingot-section {
+  padding: 6rem 0;
+}
+
+.ingot-section--features {
+  background: var(--ingot-ink-2);
+}
+
+.ingot-section--terminal {
+  background: var(--ingot-ink);
+}
+
+.ingot-section--stats {
+  background: var(--ingot-steel);
+  padding: 3.5rem 0;
+}
+
+.ingot-section--cta {
+  background: var(--ingot-ink-2);
+  padding: 7rem 0;
+}
+
+.ingot-eyebrow {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ingot-silver-2);
+  margin: 0 0 0.75rem;
+}
+
+.ingot-section__title {
+  font-size: clamp(1.6rem, 3vw, 2.2rem);
+  font-weight: 500;
+  line-height: 1.2;
+  letter-spacing: -0.015em;
+  margin: 0 0 3rem;
+  color: #fff;
+  max-width: 34rem;
+}
+
+/* ---- Feature cards ---------------------------------------------------- */
+
+.ingot-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+  gap: 1.25rem;
+}
+
+.ingot-card {
+  position: relative;
+  padding: 1.75rem;
+  border-radius: 0.5rem;
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.01));
+  border: 1px solid rgba(200, 208, 216, 0.1);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 12px 32px -16px rgba(0, 0, 0, 0.6);
+  transition: transform 0.35s var(--ingot-ease),
+              box-shadow 0.35s var(--ingot-ease),
+              border-color 0.35s;
+}
+
+.ingot-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(200, 208, 216, 0.28);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4), 0 24px 48px -16px rgba(0, 0, 0, 0.7);
+}
+
+.ingot-card__icon {
+  width: 2.5rem;
+  height: 2.5rem;
+  margin-bottom: 1.25rem;
+  padding: 0.55rem;
+  border-radius: 0.375rem;
+  background: rgba(200, 208, 216, 0.08);
+  color: var(--ingot-silver);
+}
+
+.ingot-card__icon svg {
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.ingot-card h3 {
+  font-size: 1.05rem;
+  font-weight: 600;
+  margin: 0 0 0.6rem;
+  color: #fff;
+}
+
+.ingot-card p {
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: var(--ingot-muted);
+  margin: 0 0 1.25rem;
+}
+
+.ingot-card a,
+.ingot-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--ingot-silver);
+  text-decoration: none;
+}
+
+.ingot-card a::after,
+.ingot-link::after {
+  content: "→";
+  transition: transform 0.25s var(--ingot-ease);
+}
+
+.ingot-card a:hover::after,
+.ingot-link:hover::after {
+  transform: translateX(3px);
+}
+
+/* ---- Split + terminal ------------------------------------------------- */
+
+.ingot-split {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+  gap: 4rem;
+  align-items: center;
+}
+
+.ingot-split__text .ingot-section__title {
+  margin-bottom: 1.25rem;
+}
+
+.ingot-split__text p:not(.ingot-eyebrow) {
+  font-size: 1rem;
+  line-height: 1.65;
+  color: var(--ingot-muted);
+  margin: 0 0 1.5rem;
+}
+
+.ingot-terminal {
+  border-radius: 0.6rem;
+  overflow: hidden;
+  background: #0A0C0E;
+  border: 1px solid rgba(200, 208, 216, 0.12);
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.5),
+    0 24px 64px -20px rgba(0, 0, 0, 0.8),
+    0 0 0 1px rgba(255, 255, 255, 0.02) inset;
+  transform: perspective(1200px) rotateY(-3deg) rotateX(1deg);
+  transition: transform 0.6s var(--ingot-ease);
+}
+
+.ingot-terminal:hover {
+  transform: perspective(1200px) rotateY(0) rotateX(0);
+}
+
+.ingot-terminal__bar {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.7rem 1rem;
+  background: rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid rgba(200, 208, 216, 0.08);
+}
+
+.ingot-terminal__bar span {
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 50%;
+  background: rgba(200, 208, 216, 0.15);
+}
+
+.ingot-terminal__bar em {
+  margin-left: auto;
+  font-style: normal;
+  font-size: 0.7rem;
+  color: var(--ingot-muted);
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+
+.ingot-terminal__body {
+  margin: 0;
+  padding: 1.25rem 1.5rem 1.5rem;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 0.8rem;
+  line-height: 1.7;
+  color: var(--ingot-text);
+  background: transparent;
+  overflow-x: auto;
+}
+
+.ingot-terminal__body .p  { color: var(--ingot-silver-2); }
+.ingot-terminal__body .t  { color: var(--ingot-silver); }
+.ingot-terminal__body .ok { color: var(--ingot-ok); }
+.ingot-terminal__body .c  { color: var(--ingot-muted); font-style: italic; }
+
+/* ---- Stats ------------------------------------------------------------ */
+
+.ingot-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2rem;
+}
+
+.ingot-stat {
+  text-align: center;
+  padding: 0 1rem;
+}
+
+.ingot-stat + .ingot-stat {
+  border-left: 1px solid rgba(200, 208, 216, 0.12);
+}
+
+.ingot-stat strong {
+  display: block;
+  font-size: 2.4rem;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  color: #fff;
+  line-height: 1;
+  margin-bottom: 0.6rem;
+}
+
+.ingot-stat span {
+  font-size: 0.85rem;
+  color: var(--ingot-silver-2);
+  line-height: 1.4;
+}
+
+/* ---- CTA -------------------------------------------------------------- */
+
+.ingot-cta {
+  text-align: center;
+  max-width: 36rem;
+}
+
+.ingot-cta h2 {
+  font-size: clamp(1.8rem, 3.5vw, 2.4rem);
+  font-weight: 500;
+  letter-spacing: -0.015em;
+  margin: 0 0 0.75rem;
+  color: #fff;
+}
+
+.ingot-cta p {
+  color: var(--ingot-muted);
+  margin: 0 0 2rem;
+}
+
+/* ---- Reveal on scroll ------------------------------------------------- */
+
+[data-reveal] {
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity 0.8s var(--ingot-ease), transform 0.8s var(--ingot-ease);
+}
+
+[data-reveal].is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+/* ---- Motion ----------------------------------------------------------- */
+
+@keyframes ingot-rise {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: none; }
+}
+
+@keyframes ingot-bob {
+  0%, 100% { transform: translate(-50%, 0); }
+  50%      { transform: translate(-50%, 6px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ingot-hero__content,
+  .ingot-hero__scroll { animation: none; }
+  [data-reveal] { opacity: 1; transform: none; transition: none; }
+  .ingot-terminal { transform: none; }
+  .ingot-card, .ingot-btn { transition: none; }
+}
+
+/* ---- Responsive ------------------------------------------------------- */
+
+@media (max-width: 60rem) {
+  .ingot-split {
+    grid-template-columns: 1fr;
+    gap: 2.5rem;
+  }
+  .ingot-terminal {
+    transform: none;
+  }
+}
+
+@media (max-width: 40rem) {
+  .ingot-container { padding: 0 1.25rem; }
+  .ingot-hero { min-height: 80vh; }
+  .ingot-hero__content { padding-top: 3rem; padding-bottom: 5rem; }
+  .ingot-section { padding: 4rem 0; }
+  .ingot-stats { grid-template-columns: 1fr; gap: 1.5rem; }
+  .ingot-stat + .ingot-stat {
+    border-left: none;
+    border-top: 1px solid rgba(200, 208, 216, 0.12);
+    padding-top: 1.5rem;
+  }
+  .ingot-terminal__body { font-size: 0.72rem; }
+}
+docs/javascripts/landing.js
+
+Parallax and scroll-reveal. Add to extra_javascript alongside traces.js.
+
+javascript
+/**
+ * Landing page motion: parallax on the hero canvas, reveal-on-scroll for
+ * sections. Both respect prefers-reduced-motion.
+ */
+
+(function () {
+  "use strict";
+
+  function init() {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      document.querySelectorAll("[data-reveal]").forEach(function (el) {
+        el.classList.add("is-visible");
+      });
+      return;
+    }
+
+    // ---- Reveal ---------------------------------------------------------
+    var observer = new IntersectionObserver(
+      function (entries) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("is-visible");
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.15, rootMargin: "0px 0px -60px 0px" }
+    );
+    document.querySelectorAll("[data-reveal]").forEach(function (el) {
+      observer.observe(el);
+    });
+
+    // ---- Parallax -------------------------------------------------------
+    var canvas = document.getElementById("ingot-traces");
+    var hero = canvas ? canvas.closest(".ingot-hero") : null;
+    if (!canvas || !hero) return;
+
+    var ticking = false;
+    function onScroll() {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(function () {
+        var heroHeight = hero.offsetHeight;
+        var y = window.scrollY;
+        if (y < heroHeight) {
+          canvas.style.transform = "translateY(" + y * 0.35 + "px)";
+        }
+        ticking = false;
+      });
+    }
+    window.addEventListener("scroll", onScroll, { passive: true });
+  }
+
+  if (typeof document$ !== "undefined" && document$.subscribe) {
+    document$.subscribe(init);
+  } else if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", init);
+  } else {
+    init();
+  }
+})();
+zensical.toml
 toml
-[block]
-name = "exemplar"
-top  = "exemplar_tb"
-dut  = "dut"
+extra_css = ["stylesheets/ingot.css", "stylesheets/landing.css"]
+extra_javascript = ["javascripts/traces.js", "javascripts/landing.js"]
+In traces.js, one tuning change
 
-[dependencies]
-ing = "*"
+The gradient overlay now darkens the left side where the text sits, so the traces can be brighter without competing with copy. In drawTrace, raise the alpha floor:
 
-[tests.smoke]
-seeds = 1
-Manual sequence
-bash
-uv run ingot profiles
-uv run ingot build exemplar --dry-run
-uv run ingot build exemplar                # vlogan ing, vlogan exemplar, vcs
-uv run ingot build exemplar                # artifact current
-uv run ingot build exemplar -p debug       # vcs only — no vlogan
-ls build/ing/an/base build/exemplar/an/base build/exemplar/fast build/exemplar/debug
-cat build/exemplar/fast/synopsys_sim.setup
-uv run ingot sim exemplar
-uv run ingot sim exemplar -s 42
-uv run ingot regress exemplar
-tail -5 .ingot/history.jsonl
+javascript
+    const alpha = 0.35 + 0.65 * fadeIn * fadeOut;
+What to replace before shipping
 
-The -p debug line is the one that validates the design. If it runs vlogan, analysis sharing isn't working — check the stamp file is being written and read.
+The terminal output and the three stats are illustrative. Once the exemplar produces real numbers, paste them in — a landing page whose demo doesn't match what someone sees when they run it undermines the whole thing. The stats especially: "1× analysis per unit" is true by construction, but the other two should be things you can point at.
 
-Then break the exemplar deliberately and confirm the failure output prints a useful reason and a copyable debug command.
+Same rule as everywhere else in your docs. Examples are real or they aren't there.

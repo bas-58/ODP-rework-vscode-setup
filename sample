@@ -1,30 +1,59 @@
-A section-aware theme is a good instinct, and it maps directly onto Diátaxis — each quadrant has a different reading mode, so a different treatment is communicating something, not decorating. The trick is keeping it subtle: an accent, a label, a spacing rhythm. Not a different site per section.
+Two thoughts before the code.
 
-The design
-Section	Accent	Label	Treatment
-start	green	Tutorial	generous spacing, step-timeline on h2s, reading progress bar
-guides	silver	Guide	compact, task-shaped h2s
-concepts	steel blue	Concept	prose measure, larger type, wider leading
-reference	muted	Reference	dense, tight tables, wider grid
-background	amber	Background	prose treatment plus a persistent "not about Ingot" mark
-contributing	silver	Contributing	neutral
-decisions	muted	Decision record	monospace metadata, archival feel
+Templates: yes, but as skeletons with register guidance, not fill-in-the-blank forms. The risk with rigid templates is that every tutorial ends up with the same seven sections whether or not that's the right shape. What they should constrain is register — the thing an AI most reliably gets wrong. A concept page written in imperative voice is worse than one with an unusual heading structure.
 
-Section comes from the URL automatically, with a frontmatter override (section: tutorial) for pages that don't live where they belong.
+Styling around templates: only via frontmatter, not content position. Rules like "the first paragraph is a lede" break the moment someone opens with a note. Frontmatter is declarative and robust — and it lets you render a real metadata strip instead of CSS-injected text, which is better for screen readers anyway.
+
+So I've replaced the CSS ::before section label with a proper metadata bar driven by frontmatter. That's the piece that ties templates and styling together.
 
 overrides/main.html
-
-Site-wide. Every page that isn't the landing.
-
 html
 {% extends "base.html" %}
 
 {% set ingot_section = page.meta.section
    if page and page.meta and page.meta.section
-   else (page.url.split('/')[0] if page and page.url else 'home') %}
+   else (page.url | string) %}
+
+{% set section_labels = {
+  'start':        'Tutorial',
+  'guides':       'Guide',
+  'concepts':     'Concept',
+  'reference':    'Reference',
+  'background':   'Background',
+  'contributing': 'Contributing',
+  'decisions':    'Decision record',
+  'about':        'About'
+} %}
+
+{% set section_key = (ingot_section | string).split('/')[0] %}
 
 {% block content %}
 <div class="ingot-page" data-section="{{ ingot_section }}">
+
+  {% if section_labels.get(section_key) %}
+  <div class="ingot-meta">
+    <span class="ingot-meta__section">{{ section_labels[section_key] }}</span>
+
+    {% if page.meta and page.meta.time %}
+    <span class="ingot-meta__item">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+      {{ page.meta.time }}
+    </span>
+    {% endif %}
+
+    {% if page.meta and page.meta.needs %}
+    <span class="ingot-meta__item">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h10"/></svg>
+      {{ page.meta.needs }}
+    </span>
+    {% endif %}
+
+    {% if page.meta and page.meta.status %}
+    <span class="ingot-meta__status" data-status="{{ page.meta.status }}">{{ page.meta.status }}</span>
+    {% endif %}
+  </div>
+  {% endif %}
+
 {{ super() }}
 </div>
 {% endblock %}
@@ -38,7 +67,7 @@ html
     </a>
     <nav class="ingot-docs-footer__links" aria-label="Footer">
       <a href="{{ 'start/first-block/' | url }}">Getting started</a>
-      <a href="{{ 'concepts/philosophy/' | url }}">Concepts</a>
+      <a href="{{ 'concepts/units-and-libraries/' | url }}">Concepts</a>
       <a href="{{ 'reference/cli/' | url }}">Reference</a>
       <a href="{{ 'contributing/' | url }}">Contributing</a>
       <a href="{{ 'about/' | url }}">About</a>
@@ -47,1346 +76,412 @@ html
   </div>
 </footer>
 {% endblock %}
-docs/javascripts/docs.js
+ingot.css — replace and add
 
-Mirrors the section onto <body> so the header and sidebar can respond, and drives the tutorial reading-progress bar.
-
-javascript
-/**
- * Docs page behaviour: section attribute on <body>, reading progress.
- */
-
-(function () {
-  "use strict";
-
-  var progress = null;
-
-  function ensureProgressBar() {
-    if (progress) return progress;
-    progress = document.createElement("div");
-    progress.className = "ingot-progress";
-    progress.setAttribute("aria-hidden", "true");
-    document.body.appendChild(progress);
-    return progress;
-  }
-
-  function updateProgress() {
-    if (!progress) return;
-    var el = document.documentElement;
-    var max = el.scrollHeight - el.clientHeight;
-    var p = max > 0 ? el.scrollTop / max : 0;
-    progress.style.transform = "scaleX(" + Math.max(0, Math.min(1, p)) + ")";
-  }
-
-  function init() {
-    var page = document.querySelector(".ingot-page[data-section]");
-    var section = page ? page.getAttribute("data-section") : "";
-    document.body.setAttribute("data-ingot-section", section);
-
-    ensureProgressBar();
-    updateProgress();
-  }
-
-  window.addEventListener("scroll", updateProgress, { passive: true });
-
-  if (typeof document$ !== "undefined" && document$.subscribe) {
-    document$.subscribe(init);
-  } else if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", init);
-  } else {
-    init();
-  }
-})();
-docs/stylesheets/ingot.css
-
-Complete replacement. Tokens first, then chrome, then typography, then section variants.
+Delete the ::before label rule:
 
 css
-/* =========================================================================
-   Ingot — site theme
-   ========================================================================= */
+/* DELETE THIS */
+.md-typeset > h1:first-of-type::before { content: var(--ingot-section-label, none); ... }
 
-/* ---- Tokens ----------------------------------------------------------- */
+Add the metadata bar and the two section treatments:
 
-:root {
-  --ingot-accent:          #55606B;
-  --ingot-accent-soft:     rgba(85, 96, 107, 0.12);
-  --ingot-line:            rgba(46, 51, 56, 0.14);
-  --ingot-surface:         rgba(46, 51, 56, 0.035);
-  --ingot-mono:            ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  --ingot-ease:            cubic-bezier(0.22, 1, 0.36, 1);
+css
+/* ---- Page metadata bar ------------------------------------------------ */
 
-  --md-primary-fg-color:        #2E3338;
-  --md-primary-fg-color--light: #4A5158;
-  --md-primary-fg-color--dark:  #16181B;
-  --md-primary-bg-color:        #F2F4F6;
-  --md-accent-fg-color:         #55606B;
-}
-
-[data-md-color-scheme="slate"] {
-  --md-hue: 218;
-
-  --ingot-accent:          #C8D0D8;
-  --ingot-accent-soft:     rgba(200, 208, 216, 0.08);
-  --ingot-line:            rgba(200, 208, 216, 0.11);
-  --ingot-surface:         rgba(255, 255, 255, 0.025);
-
-  --md-default-bg-color:        #0F1114;
-  --md-default-fg-color:        #E6EAEE;
-  --md-default-fg-color--light: #B8C0C8;
-  --md-default-fg-color--lighter: #8C96A0;
-  --md-default-fg-color--lightest: rgba(200, 208, 216, 0.12);
-  --md-code-bg-color:           #0A0C0E;
-  --md-code-fg-color:           #DDE3E9;
-  --md-primary-fg-color:        #0F1114;
-  --md-primary-fg-color--light: #2E3338;
-  --md-primary-fg-color--dark:  #0A0C0E;
-  --md-primary-bg-color:        #E6EAEE;
-  --md-accent-fg-color:         #C8D0D8;
-  --md-typeset-a-color:         #C8D0D8;
-  --md-footer-bg-color:         #0F1114;
-  --md-footer-bg-color--dark:   #0A0C0E;
-  --md-footer-fg-color:         #B8C0C8;
-}
-
-/* Section accents */
-[data-ingot-section="start"]        { --ingot-section: #6FCF97; --ingot-section-label: "Tutorial"; }
-[data-ingot-section="guides"]       { --ingot-section: #C8D0D8; --ingot-section-label: "Guide"; }
-[data-ingot-section="concepts"]     { --ingot-section: #8FB4D8; --ingot-section-label: "Concept"; }
-[data-ingot-section="reference"]    { --ingot-section: #9AA5B1; --ingot-section-label: "Reference"; }
-[data-ingot-section="background"]   { --ingot-section: #D8B270; --ingot-section-label: "Background"; }
-[data-ingot-section="contributing"] { --ingot-section: #C8D0D8; --ingot-section-label: "Contributing"; }
-[data-ingot-section="decisions"]    { --ingot-section: #9AA5B1; --ingot-section-label: "Decision record"; }
-[data-ingot-section="about"]        { --ingot-section: #C8D0D8; --ingot-section-label: "About"; }
-
-body {
-  -webkit-font-smoothing: antialiased;
-}
-
-/* ---- Grid ------------------------------------------------------------- */
-
-.md-grid {
-  max-width: 76rem;
-}
-
-[data-ingot-section="reference"] .md-grid {
-  max-width: 82rem;
-}
-
-/* ---- Header ----------------------------------------------------------- */
-
-.md-header {
-  background: rgba(15, 17, 20, 0.82);
-  backdrop-filter: blur(14px) saturate(140%);
-  -webkit-backdrop-filter: blur(14px) saturate(140%);
-  box-shadow: none;
+.ingot-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.9rem;
   border-bottom: 1px solid var(--ingot-line);
-  transition: border-color 0.3s;
-}
-
-[data-md-color-scheme="default"] .md-header {
-  background: rgba(242, 244, 246, 0.85);
-}
-
-.md-header__title {
-  font-size: 0.85rem;
-  font-weight: 600;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-}
-
-.md-header__topic:first-child {
-  font-weight: 600;
-}
-
-.md-header__button.md-logo img {
-  height: 1.6rem;
-  width: auto;
-}
-
-.md-search__form {
-  border-radius: 0.4rem;
-  background: var(--ingot-surface);
-  border: 1px solid var(--ingot-line);
-  box-shadow: none;
-}
-
-.md-search__form:hover {
-  background: var(--ingot-accent-soft);
-}
-
-/* ---- Tabs ------------------------------------------------------------- */
-
-.md-tabs {
-  background: transparent;
-  border-bottom: 1px solid var(--ingot-line);
-}
-
-.md-tabs__link {
-  font-size: 0.78rem;
-  font-weight: 500;
-  letter-spacing: 0.02em;
-  opacity: 0.65;
-  transition: opacity 0.2s;
-  margin-top: 0.6rem;
-}
-
-.md-tabs__link--active,
-.md-tabs__link:hover {
-  opacity: 1;
-}
-
-.md-tabs__item--active .md-tabs__link {
-  position: relative;
-}
-
-.md-tabs__item--active .md-tabs__link::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: -0.55rem;
-  height: 2px;
-  background: var(--ingot-section, var(--ingot-accent));
-  border-radius: 1px;
-}
-
-/* ---- Sidebars --------------------------------------------------------- */
-
-.md-nav__title {
   font-size: 0.7rem;
-  font-weight: 600;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--md-default-fg-color--lighter);
-  box-shadow: none;
 }
 
-.md-nav__link {
-  font-size: 0.82rem;
-  transition: color 0.15s;
-}
-
-.md-nav__link--active,
-.md-nav__item .md-nav__link--active {
-  color: var(--md-default-fg-color);
-  font-weight: 600;
-  position: relative;
-}
-
-.md-nav--primary .md-nav__item .md-nav__link--active::before {
-  content: "";
-  position: absolute;
-  left: -0.75rem;
-  top: 0.35rem;
-  bottom: 0.35rem;
-  width: 2px;
-  border-radius: 1px;
-  background: var(--ingot-section, var(--ingot-accent));
-}
-
-.md-nav--secondary .md-nav__link--active {
-  color: var(--ingot-section, var(--md-default-fg-color));
-}
-
-.md-sidebar__scrollwrap {
-  scrollbar-width: thin;
-}
-
-/* ---- Content typography ---------------------------------------------- */
-
-.md-typeset {
-  font-size: 0.82rem;
-  line-height: 1.7;
-}
-
-.md-typeset > h1:first-of-type::before {
-  content: var(--ingot-section-label, none);
-  display: block;
-  font-size: 0.68rem;
+.ingot-meta__section {
   font-weight: 600;
   letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--ingot-section, var(--md-default-fg-color--lighter));
-  margin-bottom: 0.75rem;
 }
 
-.md-typeset h1 {
-  font-weight: 500;
-  letter-spacing: -0.022em;
-  line-height: 1.15;
-  margin-bottom: 1.25rem;
-  color: var(--md-default-fg-color);
-}
-
-.md-typeset h2 {
-  font-weight: 500;
-  letter-spacing: -0.015em;
-  margin-top: 2.6em;
-  padding-bottom: 0.4em;
-  border-bottom: 1px solid var(--ingot-line);
-}
-
-.md-typeset h3 {
-  font-weight: 600;
-  margin-top: 2em;
-}
-
-.md-typeset h4 {
-  font-weight: 600;
-  font-size: 0.85rem;
-  letter-spacing: 0.02em;
-}
-
-.md-typeset a {
-  text-decoration: none;
-  border-bottom: 1px solid rgba(200, 208, 216, 0.3);
-  transition: border-color 0.15s, color 0.15s;
-}
-
-.md-typeset a:hover {
-  border-bottom-color: currentColor;
-}
-
-.md-typeset a code {
-  border-bottom: none;
-}
-
-.md-typeset strong {
-  font-weight: 600;
-  color: var(--md-default-fg-color);
-}
-
-.md-typeset hr {
-  border-bottom: 1px solid var(--ingot-line);
-  margin: 3em 0;
-}
-
-.md-typeset blockquote {
-  border-left: 2px solid var(--ingot-section, var(--ingot-accent));
-  color: var(--md-default-fg-color--light);
-  font-style: normal;
-}
-
-.md-typeset kbd {
-  font-family: var(--ingot-mono);
-  font-size: 0.7em;
-  border-radius: 0.25rem;
-  box-shadow: 0 1px 0 var(--ingot-line), 0 0 0 1px var(--ingot-line);
-  background: var(--ingot-surface);
-}
-
-/* ---- Code ------------------------------------------------------------- */
-
-.md-typeset code,
-.md-typeset pre > code {
-  font-family: var(--ingot-mono);
-  font-variant-ligatures: none;
-}
-
-.md-typeset code {
-  font-size: 0.82em;
-  padding: 0.12em 0.4em;
-  border-radius: 0.3rem;
-  border: 1px solid var(--ingot-line);
-  background: var(--ingot-surface);
-}
-
-.md-typeset pre {
-  margin: 1.4em 0;
-}
-
-.md-typeset pre > code {
-  font-size: 0.76rem;
-  line-height: 1.65;
-  padding: 1rem 1.2rem;
-  border-radius: 0.5rem;
-  border: 1px solid var(--ingot-line);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
-}
-
-.md-typeset .highlight .filename {
-  font-family: var(--ingot-mono);
-  font-size: 0.68rem;
-  letter-spacing: 0.04em;
-  border-radius: 0.5rem 0.5rem 0 0;
-  border: 1px solid var(--ingot-line);
-  border-bottom: none;
-  background: var(--ingot-surface);
-}
-
-.md-typeset .highlight .filename + pre > code {
-  border-radius: 0 0 0.5rem 0.5rem;
-}
-
-.md-clipboard {
-  color: var(--md-default-fg-color--lighter);
-}
-
-.md-clipboard:hover {
-  color: var(--ingot-section, var(--md-default-fg-color));
-}
-
-.md-typeset .md-annotation__index {
-  background: var(--ingot-section, var(--ingot-accent));
-}
-
-/* ---- Admonitions ------------------------------------------------------ */
-
-.md-typeset .admonition,
-.md-typeset details {
-  border: 1px solid var(--ingot-line);
-  border-left-width: 1px;
-  border-radius: 0.5rem;
-  background: var(--ingot-surface);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-  font-size: 0.8rem;
-}
-
-.md-typeset .admonition-title,
-.md-typeset summary {
-  background: var(--ingot-accent-soft);
-  border-bottom: 1px solid var(--ingot-line);
-  border-radius: 0.5rem 0.5rem 0 0;
-  font-weight: 600;
-  padding-top: 0.55rem;
-  padding-bottom: 0.55rem;
-}
-
-.md-typeset .admonition.note,
-.md-typeset .admonition.tip,
-.md-typeset .admonition.warning,
-.md-typeset .admonition.success,
-.md-typeset .admonition.info,
-.md-typeset .admonition.abstract {
-  border-color: var(--ingot-line);
-}
-
-.md-typeset .tip > .admonition-title,
-.md-typeset .success > .admonition-title {
-  color: #6FCF97;
-}
-
-.md-typeset .warning > .admonition-title,
-.md-typeset .caution > .admonition-title {
-  color: #D8B270;
-}
-
-.md-typeset .danger > .admonition-title,
-.md-typeset .failure > .admonition-title,
-.md-typeset .bug > .admonition-title {
-  color: #F07178;
-}
-
-/* ---- Tables ----------------------------------------------------------- */
-
-.md-typeset table:not([class]) {
-  font-size: 0.78rem;
-  border: 1px solid var(--ingot-line);
-  border-radius: 0.5rem;
-  overflow: hidden;
-  display: table;
-  width: 100%;
-}
-
-.md-typeset table:not([class]) th {
-  background: var(--ingot-accent-soft);
-  font-weight: 600;
-  font-size: 0.72rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--md-default-fg-color--light);
-  border-bottom: 1px solid var(--ingot-line);
-}
-
-.md-typeset table:not([class]) td {
-  border-top: 1px solid var(--ingot-line);
-  vertical-align: top;
-}
-
-.md-typeset table:not([class]) tr:hover td {
-  background: var(--ingot-surface);
-}
-
-/* ---- Content tabs ----------------------------------------------------- */
-
-.md-typeset .tabbed-set > input:checked + label {
-  color: var(--ingot-section, var(--ingot-accent));
-  border-color: var(--ingot-section, var(--ingot-accent));
-}
-
-.md-typeset .tabbed-labels {
-  border-bottom: 1px solid var(--ingot-line);
-}
-
-/* ---- Footer ----------------------------------------------------------- */
-
-.ingot-docs-footer {
-  border-top: 1px solid var(--ingot-line);
-  padding: 2.5rem 0 2rem;
-  background: var(--md-footer-bg-color);
-}
-
-.ingot-docs-footer__inner {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 0.75rem 3rem;
-  align-items: center;
-  padding: 0 1.2rem;
-}
-
-.ingot-docs-footer__links {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1.5rem;
-  justify-content: flex-end;
-}
-
-.ingot-docs-footer__links a {
-  font-size: 0.78rem;
-  color: var(--md-default-fg-color--lighter);
-  text-decoration: none;
-  transition: color 0.2s;
-}
-
-.ingot-docs-footer__links a:hover {
-  color: var(--md-default-fg-color);
-}
-
-.ingot-docs-footer__meta {
-  grid-column: 1 / -1;
-  margin: 0.25rem 0 0;
-  font-size: 0.72rem;
-  color: var(--md-default-fg-color--lighter);
-}
-
-.ingot-lockup {
+.ingot-meta__item {
   display: inline-flex;
   align-items: center;
-  gap: 0.6rem;
-  color: var(--md-default-fg-color--light);
-  text-decoration: none;
-  font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
+  gap: 0.35rem;
+  color: var(--md-default-fg-color--lighter);
 }
 
-.ingot-lockup img {
-  height: 1.3rem;
-  width: auto;
-}
-
-/* ---- Reading progress (tutorials only) -------------------------------- */
-
-.ingot-progress {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 2px;
-  z-index: 100;
-  background: var(--ingot-section, var(--ingot-accent));
-  transform-origin: 0 50%;
-  transform: scaleX(0);
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.3s;
-}
-
-[data-ingot-section="start"] .ingot-progress {
-  opacity: 1;
-}
-
-/* =========================================================================
-   Section variants
-   ========================================================================= */
-
-/* ---- Tutorials: spacious, step timeline ------------------------------- */
-
-[data-ingot-section="start"] .md-typeset {
-  line-height: 1.75;
-}
-
-[data-ingot-section="start"] .md-typeset h2 {
-  position: relative;
-  padding-left: 2.4rem;
-  border-bottom: none;
-  margin-top: 3.2em;
-}
-
-[data-ingot-section="start"] .md-typeset h2::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 0.35em;
+.ingot-meta__item svg {
   width: 0.85rem;
   height: 0.85rem;
-  border-radius: 50%;
-  border: 2px solid var(--ingot-section);
-  background: var(--md-default-bg-color);
-  box-shadow: 0 0 0 4px var(--ingot-accent-soft);
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.7;
 }
 
-[data-ingot-section="start"] .md-typeset h2::after {
+.ingot-meta__status {
+  margin-left: auto;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid var(--ingot-line);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--md-default-fg-color--lighter);
+}
+
+.ingot-meta__status[data-status="draft"] {
+  color: #D8B270;
+  border-color: rgba(216, 178, 112, 0.4);
+}
+
+.ingot-meta__status[data-status="stub"] {
+  color: #F07178;
+  border-color: rgba(240, 113, 120, 0.4);
+}
+
+/* ---- Concepts: hairline margin rule and a lede ----------------------- */
+
+[data-ingot-section^="concepts"] .md-content__inner {
+  position: relative;
+  padding-left: 1.75rem;
+}
+
+[data-ingot-section^="concepts"] .md-content__inner::before {
   content: "";
   position: absolute;
-  left: calc(0.425rem - 0.5px);
-  top: 1.4em;
+  left: 0;
+  top: 5.5rem;
+  bottom: 4rem;
   width: 1px;
-  height: 2.2em;
-  background: linear-gradient(180deg, var(--ingot-section), transparent);
-  opacity: 0.6;
+  background: linear-gradient(180deg,
+              var(--ingot-section), rgba(143, 180, 216, 0.06));
+  opacity: 0.55;
 }
 
-[data-ingot-section="start"] .md-typeset pre > code {
-  margin-left: 0;
-}
-
-/* ---- Guides: compact, task-shaped ------------------------------------- */
-
-[data-ingot-section="guides"] .md-typeset h2 {
-  margin-top: 2.2em;
-  font-size: 1.25rem;
-}
-
-[data-ingot-section="guides"] .md-typeset h2::before {
-  content: "›";
-  display: inline-block;
-  margin-right: 0.45em;
-  color: var(--ingot-section);
-  opacity: 0.7;
-  font-weight: 400;
-}
-
-[data-ingot-section="guides"] .md-typeset > p:first-of-type {
-  font-size: 0.9rem;
-  color: var(--md-default-fg-color--light);
-}
-
-/* ---- Concepts: prose measure, larger type ----------------------------- */
-
-[data-ingot-section="concepts"] .md-typeset {
-  font-size: 0.9rem;
-  line-height: 1.8;
-}
-
-[data-ingot-section="concepts"] .md-content__inner {
-  max-width: 44rem;
-}
-
-[data-ingot-section="concepts"] .md-typeset h1 {
-  font-size: 2.2rem;
-}
-
-[data-ingot-section="concepts"] .md-typeset h2 {
-  border-bottom: none;
-  font-size: 1.45rem;
-  margin-top: 2.8em;
-}
-
-[data-ingot-section="concepts"] .md-typeset > p:first-of-type {
-  font-size: 1.02rem;
+[data-ingot-section^="concepts"] .md-typeset > p:first-of-type {
+  font-size: 1.08rem;
   line-height: 1.7;
   color: var(--md-default-fg-color--light);
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid var(--ingot-line);
+  margin-bottom: 2rem;
 }
 
-[data-ingot-section="concepts"] .md-typeset blockquote {
-  font-size: 1rem;
-  padding: 0.5em 1.25em;
-  margin: 2em 0;
-  border-left-width: 3px;
+/* ---- Background: dashed edge, aside feel ----------------------------- */
+
+[data-ingot-section^="background"] .md-content__inner {
+  position: relative;
+  padding-left: 1.75rem;
 }
 
-/* ---- Reference: dense, tabular ---------------------------------------- */
-
-[data-ingot-section="reference"] .md-typeset {
-  font-size: 0.78rem;
-  line-height: 1.6;
-}
-
-[data-ingot-section="reference"] .md-typeset h2 {
-  font-family: var(--ingot-mono);
-  font-weight: 600;
-  font-size: 1.05rem;
-  letter-spacing: 0;
-  margin-top: 2.4em;
-}
-
-[data-ingot-section="reference"] .md-typeset h3 {
-  font-family: var(--ingot-mono);
-  font-size: 0.88rem;
-  font-weight: 600;
-}
-
-[data-ingot-section="reference"] .md-typeset table:not([class]) {
-  font-size: 0.74rem;
-}
-
-[data-ingot-section="reference"] .md-typeset table:not([class]) td,
-[data-ingot-section="reference"] .md-typeset table:not([class]) th {
-  padding: 0.5em 0.9em;
-}
-
-[data-ingot-section="reference"] .md-typeset dl dt {
-  font-family: var(--ingot-mono);
-  font-weight: 600;
-  margin-top: 1em;
-}
-
-[data-ingot-section="reference"] .md-typeset dl dd {
-  margin-left: 1.5em;
-  color: var(--md-default-fg-color--light);
-}
-
-/* ---- Background: prose plus a persistent mark ------------------------- */
-
-[data-ingot-section="background"] .md-typeset {
-  font-size: 0.88rem;
-  line-height: 1.8;
-}
-
-[data-ingot-section="background"] .md-content__inner {
-  max-width: 44rem;
-}
-
-[data-ingot-section="background"] .md-typeset > h1:first-of-type::after {
-  content: "Prerequisite knowledge — not specific to Ingot. Short by design; links to depth.";
-  display: block;
-  font-size: 0.75rem;
-  font-weight: 400;
-  letter-spacing: 0;
-  text-transform: none;
-  color: var(--md-default-fg-color--lighter);
-  margin-top: 0.6rem;
-  padding: 0.5rem 0.85rem;
-  border-left: 2px solid var(--ingot-section);
-  background: var(--ingot-surface);
-  border-radius: 0 0.35rem 0.35rem 0;
-}
-
-/* ---- Decisions: archival ---------------------------------------------- */
-
-[data-ingot-section="decisions"] .md-typeset h1 {
-  font-family: var(--ingot-mono);
-  font-weight: 600;
-  font-size: 1.5rem;
-  letter-spacing: 0;
-}
-
-[data-ingot-section="decisions"] .md-typeset > p:first-of-type,
-[data-ingot-section="decisions"] .md-typeset > p:nth-of-type(2) {
-  font-family: var(--ingot-mono);
-  font-size: 0.74rem;
-  color: var(--md-default-fg-color--lighter);
-  margin: 0.15em 0;
-}
-
-[data-ingot-section="decisions"] .md-typeset h2 {
-  font-size: 1rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  font-weight: 600;
-  border-bottom: none;
-  margin-top: 2.4em;
-}
-
-/* ---- Miscellany -------------------------------------------------------- */
-
-.md-typeset .wavedrom svg text { fill: var(--md-default-fg-color); }
-.md-typeset .wavedrom svg path { stroke: var(--md-default-fg-color--light); }
-
-.md-footer-meta,
-.md-footer__inner {
-  display: none;
+[data-ingot-section^="background"] .md-content__inner::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 3rem;
+  width: 3px;
+  background: repeating-linear-gradient(
+    180deg,
+    var(--ingot-section) 0 6px,
+    transparent 6px 12px
+  );
+  opacity: 0.4;
 }
 
 @media (max-width: 60rem) {
-  .ingot-docs-footer__inner { grid-template-columns: 1fr; }
-  .ingot-docs-footer__links { justify-content: flex-start; }
-  [data-ingot-section="concepts"] .md-content__inner,
-  [data-ingot-section="background"] .md-content__inner { max-width: none; }
+  [data-ingot-section^="concepts"] .md-content__inner,
+  [data-ingot-section^="background"] .md-content__inner {
+    padding-left: 0;
+  }
+  [data-ingot-section^="concepts"] .md-content__inner::before,
+  [data-ingot-section^="background"] .md-content__inner::before {
+    display: none;
+  }
+  .ingot-meta__status { margin-left: 0; }
 }
+Templates
 
-@media (prefers-reduced-motion: reduce) {
-  .ingot-progress { transition: none; }
-}
-zensical.toml
-toml
-extra_css = ["stylesheets/ingot.css", "stylesheets/landing.css"]
-extra_javascript = ["javascripts/traces.js", "javascripts/landing.js", "javascripts/docs.js"]
+templates/docs/ — outside docs/, so they don't publish.
 
-[project.theme]
-custom_dir = "overrides"
-What the section treatments actually do
+templates/docs/tutorial.md
 
-Tutorial — h2s become nodes on a vertical timeline: a ringed dot and a short connector line beneath. Combined with the progress bar at the top of the viewport, the page reads as a path with a position on it.
-
-Guides — h2s get a › glyph, which reads as "do this." The opening paragraph is slightly larger and muted, setting up the task.
-
-Concepts — the content column narrows to a 44rem measure, type goes up to 0.9rem with 1.8 leading. This is the one that should feel like reading an essay rather than scanning a manual.
-
-Reference — the grid widens to 82rem, type drops to 0.78rem, h2s go monospace. It should feel like a man page that's been designed.
-
-Background — same prose treatment as concepts, plus an automatic tagline under every h1 stating that the page isn't about Ingot. That's the boundary you wanted, enforced by the theme rather than by remembering to write it.
-
-Decisions — monospace h1, the status and date lines styled as metadata, uppercase section headings. Reads as a record, not an article.
-
-One thing to verify first
-
-Open a page in each section and check the data-section attribute is landing correctly — DevTools on <body> should show data-ingot-section="start" on the tutorial. If it shows empty, the Jinja page.url split isn't producing what I expect, and docs.js is the place to add a console.log to see what the template emitted.
-
-If the frontmatter override doesn't work on a specific page, check that page.meta is exposed — it's a Material convention that Zensical should preserve, but it's the one template assumption in here I haven't been able to verify directly.
-
-Give me a few sample pages to demonstrate the differences.
-
-Four pages, one per treatment. They're real content, not placeholders — each is a page you'd keep. The tutorial already exists; decisions already have three.
-
-docs/guides/debug-a-failure.md
 markdown
-# Debug a failure
+---
+time: "15 min"
+needs: "A shell with VCS available"
+---
 
-A test failed. This is the path from that line of output to knowing why,
-in order of increasing cost.
+<!--
+TUTORIAL — Diátaxis quadrant: learning-oriented.
 
-## Reproduce it first
+The reader is new and wants a first success. Rules:
 
-Every failure prints its seed and a reproduce command:
+- ONE path. No branching, no "if you prefer X". Alternatives are how-tos.
+- Every command is pasteable and every output is real. Never invent
+  numbers or paths; run it and copy what printed.
+- The reader makes no decisions. You choose for them and say so.
+- Use "you" and the imperative. "Run this", not "one can run".
+- Explain only what is needed to proceed. Link the rest.
+- End with what they saw and where to go next.
 
-```
-FAIL  dma/burst_wrap  seed=77120493  6.8s
-  UVM_ERROR @ 12480ns: sb miscompare, expected 0x3A got 0x1C
-  log:        build/dma/fast/runs/burst_wrap_77120493/sim.log
-  reproduce:  ingot sim dma -t burst_wrap -s 77120493
-  debug:      ingot sim dma -t burst_wrap -s 77120493 -p debug --waves
-```
+Frontmatter: `time` is an honest estimate. `needs` is what they must have
+before starting, in one clause. Delete either if not applicable.
+-->
 
-Run the reproduce command before anything else:
+# <What they will have built>
 
-```bash
-ingot sim dma -t burst_wrap -s 77120493
-```
+<One paragraph: what this produces, and roughly how long it takes. Set
+expectations, then get out of the way.>
 
-If it fails the same way, you have a deterministic failure and everything
-below applies. If it passes, see
-[When the seed doesn't reproduce](#when-the-seed-doesnt-reproduce).
+## Before you start
 
-## Read the log
+<A short list of prerequisites. If something needs setup, link it rather
+than explaining it here.>
 
-The failure line is the first error, not necessarily the root cause. Open
-the log and look at what preceded it:
+!!! note "<Anything they might reasonably worry about>"
 
-```bash
-less build/dma/fast/runs/burst_wrap_77120493/sim.log
-```
+    <e.g. "No GitLab token needed — that comes later.">
 
-Search backward from the error for `UVM_WARNING`, unexpected state
-transitions, or the last transaction the scoreboard accepted. Most
-miscompares have a visible cause a few hundred nanoseconds earlier.
+## 1. <First action>
 
-!!! tip "Grep the log before opening it"
-
-    `grep -n "UVM_\(WARNING\|ERROR\)" sim.log` gives you every report with
-    line numbers. Reading those in order is usually faster than paging.
-
-## Get waveforms
-
-If the log doesn't settle it, rerun with the debug profile:
+<One or two sentences of context, then the command.>
 
 ```bash
-ingot sim dma -t burst_wrap -s 77120493 -p debug --waves
+<command>
 ```
 
 ```
-  vcs elaborate    58.0s  ok
-FAIL  dma/burst_wrap  seed=77120493  9.1s
-  waves:      build/dma/debug/runs/burst_wrap_77120493/dump.fsdb
+<real output>
 ```
 
-Only elaboration ran — analysis was reused. The debug binary has
-`-debug_access+all` and `-kdb`, so the FSDB carries everything Verdi
-needs.
+<What just happened, in one or two sentences. Only what matters for the
+next step.>
 
-## Open in Verdi
+## 2. <Next action>
 
-```bash
-verdi -ssf build/dma/debug/runs/burst_wrap_77120493/dump.fsdb &
-```
+<Repeat. Numbered headings — the tutorial styling renders them as a
+timeline, and the numbers reinforce the single path.>
 
-Jump to the error time from the log — `12480ns` in the example — and
-trace backward from the miscompared signal.
+## <Something goes wrong, deliberately>
 
-=== "Narrow the dump first"
+<Break it on purpose if the tool's failure behaviour is worth showing.
+Seeing a real failure is worth more than being told about one.>
 
-    A full-hierarchy dump on a long test can be gigabytes. Scope it:
+## What you've seen
 
-```bash
-    ingot sim dma -t burst_wrap -s 77120493 -p debug --waves \
-        +wave_scope=dma_tb.dut.u_engine +wave_start=12000ns
-```
+!!! success "What you've seen"
 
-    Those plusargs go to the testbench's wave manager, not to VCS.
+    - <Point one>
+    - <Point two>
 
-=== "Log-only debug"
+## Where next
 
-    If Verdi is unavailable, `-p debug` still helps: the binary has full
-    debug access, so `$display` hierarchy references that were optimized
-    away in `fast` will work.
+- [<How-to for the obvious next task>](../guides/<page>.md)
+- [<The concept behind what they just did>](../concepts/<page>.md)
 
-## Fix, then regress
+templates/docs/guide.md
 
-After the fix, confirm the seed passes, then run the block's testlist to
-make sure nothing else regressed:
-
-```bash
-ingot sim dma -t burst_wrap -s 77120493
-ingot regress dma -p fast
-```
-
-The regression uses the `fast` profile. Don't leave the debug artifact
-as the default — it's slower to simulate.
-
-## When the seed doesn't reproduce
-
-A seed that fails once and passes on rerun means the testbench has a
-source of nondeterminism. Common causes, in order of likelihood:
-
-1. **Wall-clock dependence** — `$time`-independent randomness, `$urandom`
-   without a seed, file reads in an unstable order.
-2. **Race conditions** — stimulus driven at the clock edge with blocking
-   assignments. See [SystemVerilog conventions](../reference/systemverilog.md).
-3. **Uninitialized state** — a register the testbench reads before reset
-   deasserts.
-
-None of these are fixable by rerunning. Find the nondeterminism, then
-reproduce the failure.
-
-??? note "Checking for nondeterminism"
-
-    Run the same seed five times and diff the logs:
-
-```bash
-    for i in 1 2 3 4 5; do
-      ingot sim dma -t burst_wrap -s 77120493 --json > run_$i.json
-    done
-    diff run_1.json run_2.json
-```
-
-    Any difference in the diagnostic output means the run isn't
-    deterministic.
-docs/concepts/units-and-libraries.md
 markdown
-# Units and libraries
+---
+needs: "<what must already be true>"
+---
 
-Ingot compiles every unit — every library, every block — into its own
-VCS library, once, and shares that compiled result with everything that
-depends on it. This page explains what that means, why it's the default,
-and what it costs.
+<!--
+HOW-TO — Diátaxis quadrant: task-oriented.
 
-## What a unit is
+The reader has a goal and needs the steps. Rules:
 
-A unit is a directory with an `ingot.toml`. That's the whole definition.
-Libraries declare `[library]`; blocks declare `[block]`. The manifest
-names the unit, and the name is what other units use to depend on it.
+- Start from the goal, not from background. They already know why.
+- Assume competence. No explaining what a seed is; link it.
+- Variants belong in content tabs, not in prose branches.
+- Order steps by what they'd do, not by how the system works.
+- If a step needs a reason, one sentence. If it needs a paragraph, that
+  paragraph belongs in concepts and this should link to it.
 
-```mermaid
-graph LR
-  ing[ing<br/><small>lib/ing</small>] --> dma[dma<br/><small>blocks/dma</small>]
-  ing --> uart[uart<br/><small>blocks/uart</small>]
-  ingv[ingv<br/><small>lib/ingv</small>] --> dma
-  ingv --> uart
-  dma --> top[top<br/><small>blocks/top</small>]
-  uart --> top
+Delete `needs` if the guide stands alone.
+-->
+
+# <Verb the thing> — e.g. "Debug a failure", "Add a dependency"
+
+<One or two sentences: when you'd do this, and what you end up with.>
+
+## <First step, as an action>
+
+<Terse. The command, what to look for.>
+
+```bash
+<command>
 ```
 
-Nothing about the directory path matters to resolution. `lib/` and
-`blocks/` exist to tell humans which things are meant to outlive the
-project, not to tell Ingot anything.
+## <Next step>
 
-## What "its own library" means
+=== "<Variant A>"
 
-VCS's three-step flow analyzes sources into a *compiled library* — a
-directory of parsed, type-checked design units — and elaborates from
-there. The default is one library for everything.
+    <Use tabs for genuine alternatives — different tools, platforms, or
+    situations. Not for optional extras.>
 
-Ingot gives each unit its own:
+=== "<Variant B>"
 
-```
-build/
-├── ing/an/base/AN.DB
-├── ingv/an/base/AN.DB
-├── dma/an/base/AN.DB
-└── top/
-    ├── an/base/AN.DB
-    └── fast/synopsys_sim.setup      ← maps all five by name
-```
+    <...>
 
-When `top` is elaborated, VCS finds `dma`'s modules in `dma`'s library,
-`ing`'s in `ing`'s, and so on, through a generated setup file. Nothing
-gets re-analyzed for `top`'s benefit.
+## When <the common failure mode>
 
-> A block is a library when another block depends on it. The compiled
-> output is the same directory whether you're running `dma`'s testbench or
-> building `top` against it.
+<How-tos earn their keep on the unhappy path. Cover what goes wrong and
+what to do about it.>
 
-## Why this is the default
+??? note "<Longer diagnostic procedure>"
 
-Three reasons, in order of how much they matter.
-
-**Analysis is shared.** Without per-unit libraries, building `top`
-re-analyzes every source in the design. With them, `ing` was analyzed
-once — when the first block needed it — and every block since has reused
-that work. On a design where the library carries UVM and vendor VIP, that
-is the difference between seconds and minutes per block.
-
-**Only what changed re-analyzes.** Each library has a stamp recording
-what went into it. Edit `dma_engine.sv` and `dma` re-analyzes; `ing`,
-`ingv`, and `uart` don't. Then `-Mupdate` recompiles only the affected
-modules at elaboration. The incremental story is end to end.
-
-**Partition compile is a flag flip.** VCS's `-partcomp` partitions along
-library boundaries. With per-unit libraries already in place, enabling it
-later is a profile change, not a restructure.
-
-## What it costs
-
-**Disk.** Each unit has an analysis directory, and each block has one
-elaboration directory per profile. `ingot clean --profile debug` exists
-for when that adds up.
-
-**A setup file you never touch.** `synopsys_sim.setup` is generated into
-every working directory. You can read it — `ingot manifest show` prints
-the mapping — but you don't write it.
-
-**Cross-library imports have to work.** `import dma_pkg::*` inside `top`'s
-environment resolves through the setup file into `dma`'s library. That's
-standard three-step methodology, but it's a moving part, and it's the
-thing worth verifying first when a new block can't see a dependency's
-package.
-
-## Where defines fit
-
-A define changes what the analyzer sees, so it changes the analysis.
-Blocks whose effective defines differ get separate analyses of the same
-library:
-
-```
-build/ing/an/base/          ← every block with no defines
-build/ing/an/9f2a11c3e0b4/  ← blocks that set +define+FIFO_DEPTH=16
-```
-
-Most blocks have no defines and share `base`. The keyed directories exist
-so that the ones that do can't corrupt everyone else's.
+    <Collapse anything that most readers will skip.>
 
 ## Related
 
-- [Profiles](profiles.md) — the same idea applied to elaboration
-- [Incremental compilation](incremental-compilation.md) — exactly what
-  gets skipped and why
-- [Compiled libraries](../background/compiled-libraries.md) — the VCS
-  background if this is new
-docs/reference/manifest.md
+- [<Adjacent task>](<page>.md)
+- [<The concept behind it>](../concepts/<page>.md)
+
+templates/docs/concept.md
+
 markdown
-# Manifest
+<!--
+EXPLANATION — Diátaxis quadrant: understanding-oriented.
 
-Every unit is defined by an `ingot.toml` at its root. This page lists
-every section and field. Unknown keys are errors, not warnings.
+The reader wants to understand, not to do. Rules:
 
-## Unit manifests
+- No instructions. If you find yourself writing "run this", it's a how-to.
+- Take a position and argue it. Explanation is allowed opinions; say why
+  the design is what it is and what was rejected.
+- Say what it costs. A page that only lists benefits reads as marketing.
+- The first paragraph is a lede — it is styled as one. Make it a real
+  summary, not "This page explains...".
+- Diagrams over prose where structure is involved. Mermaid is available.
+- Link to the reference for exact fields; do not restate them.
+-->
 
-A unit manifest carries exactly one of `[block]` or `[library]`.
+# <The thing being explained>
 
-### `[block]`
+<Lede. One paragraph stating what this is and why it matters. This is
+styled larger and separated by a rule — it carries weight. Do not waste
+it on "This page covers...".>
 
-A design under test. Has a testbench; may have tests.
+## What <it> is
 
-`name`
-:   Unique across every unit in the project. Becomes the compiled library
-    name. **Required.**
+<Definition, precisely. Then a diagram if structure is involved.>
 
-`top`
-:   Module elaboration starts from. The testbench top, not the DUT.
-    Required for `ingot build`.
-
-`dut`
-:   Instance name of the design under `top`. Used to scope coverage.
-    Default `"dut"`.
-
-### `[library]`
-
-A collection of components. Depended on, never run directly.
-
-`name`
-:   Unique across every unit. Becomes the compiled library name.
-    **Required.**
-
-!!! note "Libraries cannot have `[tests]`"
-
-    Libraries are exercised by unit tests, not testbenches. If a unit has
-    a DUT and needs a UVM environment to verify, it is a block — declare
-    it as one, wherever it lives.
-
-### `[dependencies]`
-
-```toml
-[dependencies]
-ing  = "*"
-ingv = "*"
+```mermaid
+graph LR
+  a --> b
 ```
 
-Keys are unit names, resolved by scanning `lib/` and `blocks/` for a
-manifest with a matching `name`. Values are version constraints;
-currently only `"*"` is meaningful. Dependencies resolve transitively and
-cycles are errors.
+## Why it works this way
 
-### `[sources]`
+<The argument. Several reasons, ordered by how much they matter. This is
+the section that justifies the page existing.>
 
-All fields optional. Defaults discover sources by convention.
+> <A pulled principle, if there is one. Blockquotes are styled as
+> statements of position.>
+
+## What it costs
+
+<Honest tradeoffs. Disk, complexity, a constraint it imposes. A page
+without this section is not trustworthy.>
+
+## Related
+
+- [<The reference for exact details>](../reference/<page>.md)
+- [<The background primer, if the reader may lack it>](../background/<page>.md)
+
+templates/docs/reference.md
+
+markdown
+<!--
+REFERENCE — Diátaxis quadrant: information-oriented.
+
+The reader knows what they want and needs the fact. Rules:
+
+- Complete. Every field, every option, every default. Gaps are bugs.
+- Neutral. No persuasion, no "we recommend". State what it does.
+- Structured identically throughout. Tables for tabular things,
+  definition lists for fields, headings that match the thing's own names.
+- Terse. Nobody reads this page; they search it.
+- Never explain reasoning at length — link to concepts.
+- Examples are real and complete, not fragments.
+-->
+
+# <The thing>
+
+<One or two sentences: what this documents and what it's for. Then get
+straight to the content.>
+
+## <First group>
+
+### `<field or command>`
+
+`<option>`
+:   <What it does. Type, default, required or not.> **Required.**
+
+`<option>`
+:   <...> Default `<value>`.
 
 | Field | Type | Default | Purpose |
 |---|---|---|---|
-| `include` | list | see below | Glob patterns replacing the defaults |
-| `exclude` | list | `[]` | Glob patterns removed from the result |
-| `order` | list | `[]` | Path suffixes forced to the front, for VHDL |
-| `incdirs` | list | `[]` | Extra include directories, relative to the unit |
-| `compile` | list | `[]` | Header files that must be compiled directly |
-| `library` | string | `"work"` | VHDL library name |
+| `<name>` | `<type>` | `<default>` | <one clause> |
 
-Default `include` patterns:
+!!! note "<A constraint that isn't obvious from the table>"
 
-```
-design/**/*.{sv,svh,v,vh,vhd,vhdl}
-verif/**/*.{sv,svh}
-src/**/*.{sv,svh}
-*.{sv,svh,v,vh,vhd,vhdl}
-```
-
-Blocks use `design/` and `verif/`. Libraries put sources at their root
-or under `src/`. Anything else needs `include`.
-
-**Headers.** Files ending `.svh` or `.vh` are discovered, contribute their
-directory to the include path, and are *not* passed to the compiler —
-they are included by other files. List a header under `compile` if it
-must be compiled directly. `ingot manifest show` names every excluded
-header.
-
-**Ordering.** VHDL sources are ordered automatically by scanning
-`use work.X` and `entity work.X` references. `order` overrides that for
-files the scanner gets wrong. SystemVerilog needs no ordering within a
-single analysis.
-
-### `[defines]`
-
-```toml
-[defines]
-SIMULATION = ""
-FIFO_DEPTH = "16"
-```
-
-Emitted as `+define+KEY=VALUE`, or `+define+KEY` when the value is empty.
-Merged across the dependency chain — a block's defines override its
-dependencies'. Any define changes the analysis key, so blocks with
-different defines get separate analyses of shared libraries.
-
-### `[tests.<name>]`
-
-```toml
-[tests.smoke]
-seeds = 1
-
-[tests.stress]
-seeds = 20
-plusargs = ["+iterations=2000"]
-```
-
-`seeds`
-:   How many random seeds `ingot regress` runs for this test. Default `1`.
-
-`plusargs`
-:   Passed to `simv` after the standard `+UVM_TESTNAME` and
-    `+ntb_random_seed`. Default `[]`.
-
-Blocks only. The test name becomes `+UVM_TESTNAME`; non-UVM testbenches
-ignore it.
-
-### `[profiles.<name>]`
-
-Block-level profile overrides. Same schema as the project-level section
-below. Use for something specific to one block — `-partcomp` on `top`,
-say — not for redefining what `debug` means.
-
-## Project manifest
-
-The root `ingot.toml` is identified by carrying `[project]` or
-`[gitlab]`. It is not a unit.
-
-### `[project]`
-
-`name`
-:   Project name. Informational.
-
-### `[gitlab]`
-
-`url`
-:   Instance URL.
-
-`project`
-:   Path with namespace, e.g. `circuitware/ingot/ingot`.
-
-`ca_bundle`
-:   Path to the corporate CA certificate. Overridden by
-    `REQUESTS_CA_BUNDLE`.
-
-### `[agent]`
-
-`name`, `email`
-:   Identity used for the `Co-authored-by` trailer on AI-assisted commits.
-
-### `[profiles.<name>]`
-
-```toml
-[profiles.gate]
-description = "Gate-level with SDF timing."
-inherits    = "fast"
-defines     = { GATE_SIM = "" }
-elab_args   = ["-sdf", "max:dut:netlist.sdf"]
-```
-
-| Field | Type | Default | Purpose |
-|---|---|---|---|
-| `description` | string | `""` | Shown by `ingot profiles` |
-| `inherits` | string | — | Parent profile; ancestors apply first |
-| `elab_args` | list | `[]` | Appended to the `vcs` command |
-| `defines` | table | `{}` | Profile-specific defines; forces a separate analysis |
-| `coverage` | bool | `false` | Add `-cm` and generate a hierarchy file |
-| `coverage_metrics` | string | `"line+cond+fsm+tgl+branch"` | The `-cm` argument |
-| `coverage_scope` | string | `"dut"` | `"dut"` scopes to `top.dut`; `"all"` covers everything |
-
-Built-in profiles `fast`, `debug`, and `coverage` may be overridden by
-name. See [Profiles](profiles.md) for their definitions.
+    <Only where a table can't carry it.>
 
 ## Complete example
 
-```toml
-[block]
-name = "dma"                 # (1)!
-top  = "dma_tb"
-dut  = "u_dma"               # (2)!
-
-[dependencies]
-ing  = "*"
-ingv = "*"
-
-[sources]
-exclude = ["design/legacy/**"]
-incdirs = ["verif/include"]  # (3)!
-
-[defines]
-DMA_CHANNELS = "4"
-
-[tests.smoke]
-seeds = 1
-
-[tests.burst_wrap]
-seeds = 25
-plusargs = ["+max_burst=256"]
-
-[profiles.fast]              # (4)!
-inherits  = "fast"
-elab_args = ["-timescale=1ns/1ps"]
+```<lang>
+<a real, complete, working example — not a fragment>
 ```
 
-1. Also the compiled library name — `dma` in `synopsys_sim.setup`.
-2. The DUT is instantiated as `u_dma`, not `dut`, so coverage scope
-   needs telling.
-3. Directories containing `.svh` files are found automatically; this
-   adds one that has no discovered sources of its own.
-4. Overrides the built-in `fast` for this block only, adding a
-   timescale.
-docs/background/three-step-flow.md
+1. <Code annotations for anything non-obvious in the example.>
+AGENTS.md — documentation section
 markdown
-# The three-step flow
+## Documentation
 
-VCS can compile a design in one command or three. Ingot uses three, and
-most of what makes it fast depends on the difference.
+Pages are organized by what the reader needs, following Diátaxis. A page
+belongs to exactly one kind and does not mix them.
 
-## One step
+| Kind | Directory | Reader wants | Register |
+|---|---|---|---|
+| Tutorial | `docs/start/` | first success | we, step by step, one path |
+| How-to | `docs/guides/` | to complete a task | imperative, assumes context |
+| Reference | `docs/reference/` | a specific fact | terse, complete, neutral |
+| Explanation | `docs/concepts/` | to understand | discursive, takes positions |
+| Background | `docs/background/` | prerequisite knowledge | short primers, links to depth |
 
-```bash
-vcs -sverilog design.sv tb.sv -o simv
+Start from the matching template in `templates/docs/`. The comment block at
+the top states the rules for that kind — read it, then delete it.
+
+When writing a page, the most common failure is mixing kinds. If a how-to
+starts explaining why the design is what it is, that paragraph belongs in
+`concepts/` and the guide should link to it instead.
+
+Every command shown in documentation must have been run. Every output shown
+must be real. Do not invent paths, durations, seeds, or error messages.
+Where a real file is being quoted, use a snippet so it cannot drift:
+
+```toml
+    --8<-- "../blocks/exemplar/ingot.toml"
 ```
 
-Parse, type-check, elaborate, generate C, compile C, link. One invocation,
-one output. Simple, and every change to any file repeats all of it.
+Frontmatter is optional. `time` and `needs` render as a metadata strip;
+`status: draft` or `status: stub` renders a badge. Use `status` on any
+page that is not finished.
+The status badge is the piece I'd use immediately
 
-## Three steps
+Every stub page you create gets status: stub in its frontmatter, and it renders a red pill in the metadata bar. That's honest with readers, visible to you when browsing, and greppable:
 
-```bash
-vlogan -sverilog design.sv tb.sv     # analyze
-vcs tb_top -o simv                   # elaborate
-./simv                               # run
-```
+bash
+grep -rl "status: stub" docs/
 
-**Analysis** parses and type-checks each file into a *compiled library* —
-a directory of design units VCS can load later. It's per-file and fast.
-
-**Elaboration** starts from a top module, resolves every instantiation
-against the compiled libraries, flattens the hierarchy, and generates
-and compiles the simulation binary. This is the expensive step, and it's
-where debug access, coverage instrumentation, and optimization flags
-apply.
-
-**Run** executes the binary with plusargs — test name, seed, verbosity.
-
-## Why the split matters
-
-Three things become possible that aren't with one step.
-
-**Analysis can be shared.** A library analyzed once serves every design
-that instantiates it. In one-step, every design re-analyzes everything.
-
-**Elaboration can vary without re-analysis.** Debug and non-debug
-binaries come from the same compiled libraries. Flags that change the
-binary don't change what was parsed.
-
-**Runs are free.** A thousand seeds against one binary cost one
-elaboration. In one-step, tools that recompile per test pay elaboration
-a thousand times — and that's more common than you'd expect.
-
-Ingot's [profiles](../concepts/profiles.md) are the second point made
-into a feature. Its [per-unit libraries](../concepts/units-and-libraries.md)
-are the first.
-
-## The setup file
-
-Three-step needs to know where compiled libraries live. That's
-`synopsys_sim.setup`, read from the working directory:
-
-```
-WORK > DEFAULT
-DEFAULT : /abs/build/dma/an/base/AN.DB
-ing     : /abs/build/ing/an/base/AN.DB
-```
-
-Library names on the left, directories on the right. `vlogan -work ing`
-writes into the `ing` entry; `vcs` reads all of them. Ingot generates
-this file; you won't edit it.
-
-## Read more
-
-- VCS User Guide, "Three-Step Flow" — the authoritative description
-- [Compiled libraries](compiled-libraries.md) — what's inside `AN.DB`
-- [Incremental compilation](../concepts/incremental-compilation.md) —
-  how Ingot decides what to skip
-What each demonstrates
-
-Open these side by side:
-
-Guide — › on headings, tight spacing, tabs for the two variants, a collapsed details block for the long check
-Concept — narrow measure, larger type, the lede paragraph in muted text, the blockquote as a pulled principle, a Mermaid diagram
-Reference — wide grid, monospace headings, definition lists, two tables, annotations on the full example
-Background — the automatic tagline under the h1, prose treatment, references at the end
-
-The tutorial's timeline treatment and progress bar show on first-block.md, and the archival treatment is visible on any of the three decisions.
-
-If any of the section-specific rules aren't landing, check data-ingot-section on <body> first — everything else keys off it.
+Your writing queue, maintained by the pages themselves.
